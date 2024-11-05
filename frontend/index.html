@@ -637,7 +637,7 @@
 
                     const clearConfig = async () => {
                         try {
-                            await ElementPlus.ElMessageBox.confirm('确认清空所有置？此操作不可恢复', '警告', {
+                            await ElementPlus.ElMessageBox.confirm('确认清空所有动作？此操作不可恢复', '警告', {
                                 confirmButtonText: '确定',
                                 cancelButtonText: '取消',
                                 type: 'warning'
@@ -645,7 +645,7 @@
                             
                             await axios.post(`${API_BASE_URL}/actions/clear`);
                             allActions.value = {};
-                            ElementPlus.ElMessage.success('配置已清空');
+                            ElementPlus.ElMessage.success('动作已清空');
                         } catch (error) {
                             if (error !== 'cancel') {
                                 console.error('清空失败:', error);
@@ -655,10 +655,10 @@
                     };
 
                     const importConfig = async () => {
-                        // TODO: 实现导入配置的逻辑
+                        // TODO: 实现导入作业的逻辑
                         // 导入成功后设置卡名
                         // levelName.value = importedFileName;
-                        ElementPlus.ElMessage.info('导入配置功能开发中');
+                        ElementPlus.ElMessage.info('导入作业功能开发中');
                     };
 
                     const extendRound = (roundNum) => {
