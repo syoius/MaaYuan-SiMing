@@ -3,7 +3,7 @@
         "action": "Swipe",
         "begin" : [77,991,10,1],
         "end" : [77,670,10,1],
-        "post_delay": 3500
+        "post_delay": 4000
         
     },
     "1号位下拉":{
@@ -28,7 +28,7 @@
         "action": "Swipe",
         "begin" : [220,996,1,1],
         "end" : [225,668,1,1],
-        "post_delay": 3500
+        "post_delay": 4000
     },
     "2号位下拉":{
         "action": "Swipe",
@@ -46,7 +46,7 @@
         "action": "Swipe",
         "begin" : [357,975,1,1],
         "end" : [357,714,1,1],
-        "post_delay": 3500
+        "post_delay": 4000
     },
     "3号位下拉":{
         "action": "Swipe",
@@ -64,7 +64,7 @@
         "action": "Swipe",
         "begin" : [496,980,1,1],
         "end" : [496,679,1,1],
-        "post_delay": 3500
+        "post_delay": 4000
     },
     "4号位下拉":{
         "action": "Swipe",
@@ -82,7 +82,7 @@
         "action": "Swipe",
         "begin" : [646,987,1,1],
         "end" : [642,700,1,1],
-        "post_delay": 3500
+        "post_delay": 4000
     },
     "5号位下拉":{
         "action": "Swipe",
