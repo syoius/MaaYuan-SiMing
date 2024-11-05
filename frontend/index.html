@@ -95,56 +95,128 @@
                 <!-- 动作列 -->
                 <el-table-column label="动作">
                     <template #default="{ row }">
-                        <div style="display: flex; align-items: center; justify-content: space-between;">
-                            <!-- 显示现有动作 -->
-                            <div style="display: flex; align-items: center; flex-wrap: wrap;">
-                                <el-tag
-                                    v-for="(action, index) in row.actions"
-                                    :key="index"
-                                    closable
-                                    @close="removeAction(row.roundNum, index)"
-                                    style="margin-right: 10px;">
-                                    {{ action }}
-                                </el-tag>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <!-- 第一行动作和控件 -->
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <!-- 动作标签和添加控件 -->
+                                <div style="display: flex; align-items: center; flex: 1;">
+                                    <!-- 第一行动作显示 -->
+                                    <div style="display: flex; align-items: center; flex-wrap: wrap;">
+                                        <el-tag
+                                            v-for="(action, index) in row.actions.slice(0, row.firstLineActions)"
+                                            :key="index"
+                                            closable
+                                            @close="removeAction(row.roundNum, index)"
+                                            style="margin-right: 10px;">
+                                            {{ action }}
+                                        </el-tag>
+                                    </div>
+                                    
+                                    <!-- 第一行的添加动作控件 -->
+                                    <el-form v-if="row.firstLineActions < 5" 
+                                            :inline="true" 
+                                            style="margin: 0; display: inline-flex; align-items: center;">
+                                        <el-form-item style="margin: 0 10px 0 0;">
+                                            <el-select 
+                                                v-model="selectedPositions[row.roundNum]" 
+                                                placeholder="位置" 
+                                                size="small" 
+                                                style="width: 70px;">
+                                                <el-option
+                                                    v-for="pos in getAvailablePositions(row.actions.slice(0, row.firstLineActions))"
+                                                    :key="pos"
+                                                    :label="pos"
+                                                    :value="pos">
+                                                </el-option>
+                                            </el-select>
+                                        </el-form-item>
+                                        <el-form-item style="margin: 0 10px 0 0;">
+                                            <el-select 
+                                                v-model="selectedActions[row.roundNum]" 
+                                                placeholder="动作" 
+                                                size="small" 
+                                                style="width: 70px;">
+                                                <el-option label="普攻" value="普"></el-option>
+                                                <el-option label="上拉" value="上"></el-option>
+                                                <el-option label="下拉" value="下"></el-option>
+                                            </el-select>
+                                        </el-form-item>
+                                        <el-form-item style="margin: 0;">
+                                            <el-button 
+                                                type="primary" 
+                                                size="small" 
+                                                @click="addAction(row.roundNum, false)">
+                                                添加
+                                            </el-button>
+                                        </el-form-item>
+                                    </el-form>
+                                </div>
+
+                                <!-- 附加回合按钮 -->
+                                <el-button 
+                                    v-if="!row.isExtended"
+                                    type="primary" 
+                                    size="small"
+                                    plain
+                                    @click="extendRound(row.roundNum)"
+                                    style="margin-left: 10px;">
+                                    附加回合
+                                </el-button>
                             </div>
-                            
-                            <!-- 添加动作的控件 -->
-                            <el-form :inline="true" style="margin: 0 0 0 40px; display: inline-flex; align-items: center;"
-                                     v-if="row.actions.length < 5">
-                                <el-form-item style="margin: 0 10px 0 0;">
-                                    <el-select 
-                                        v-model="selectedPositions[row.roundNum]" 
-                                        placeholder="位置" 
-                                        size="small" 
-                                        style="width: 70px;">
-                                        <el-option
-                                            v-for="pos in getAvailablePositions(row.actions)"
-                                            :key="pos"
-                                            :label="pos"
-                                            :value="pos">
-                                        </el-option>
-                                    </el-select>
-                                </el-form-item>
-                                <el-form-item style="margin: 0 10px 0 0;">
-                                    <el-select 
-                                        v-model="selectedActions[row.roundNum]" 
-                                        placeholder="动作" 
-                                        size="small" 
-                                        style="width: 80px;">
-                                        <el-option label="普攻" value="普"></el-option>
-                                        <el-option label="上拉" value="上"></el-option>
-                                        <el-option label="下拉" value="下"></el-option>
-                                    </el-select>
-                                </el-form-item>
-                                <el-form-item style="margin: 0;">
-                                    <el-button 
-                                        type="primary" 
-                                        size="small" 
-                                        @click="addAction(row.roundNum)">
-                                        添加
-                                    </el-button>
-                                </el-form-item>
-                            </el-form>
+
+                            <!-- 第二行（扩展行）的动作和控件 -->
+                            <div v-if="row.isExtended" 
+                                 style="display: flex; align-items: center; margin-left: 20px;">
+                                <div style="display: flex; align-items: center; flex-wrap: wrap;">
+                                    <el-tag
+                                        v-for="(action, index) in row.actions.slice(row.firstLineActions)"
+                                        :key="index + row.firstLineActions"
+                                        closable
+                                        @close="removeAction(row.roundNum, index + row.firstLineActions)"
+                                        style="margin-right: 10px;">
+                                        {{ action }}
+                                    </el-tag>
+                                </div>
+                                
+                                <!-- 第二行的添加动作控件 -->
+                                <el-form v-if="row.actions.length < 9" 
+                                        :inline="true" 
+                                        style="margin: 0; display: inline-flex; align-items: center;">
+                                    <el-form-item style="margin: 0 10px 0 0;">
+                                        <el-select 
+                                            v-model="selectedPositionsExtended[row.roundNum]" 
+                                            placeholder="位置" 
+                                            size="small" 
+                                            style="width: 70px;">
+                                            <el-option
+                                                v-for="pos in getAvailablePositionsExtended(row.actions.slice(row.firstLineActions))"
+                                                :key="pos"
+                                                :label="pos"
+                                                :value="pos">
+                                            </el-option>
+                                        </el-select>
+                                    </el-form-item>
+                                    <el-form-item style="margin: 0 10px 0 0;">
+                                        <el-select 
+                                            v-model="selectedActionsExtended[row.roundNum]" 
+                                            placeholder="动作" 
+                                            size="small" 
+                                            style="width: 70px;">
+                                            <el-option label="普攻" value="普"></el-option>
+                                            <el-option label="上拉" value="上"></el-option>
+                                            <el-option label="下拉" value="下"></el-option>
+                                        </el-select>
+                                    </el-form-item>
+                                    <el-form-item style="margin: 0;">
+                                        <el-button 
+                                            type="primary" 
+                                            size="small" 
+                                            @click="addAction(row.roundNum, true)">
+                                            添加
+                                        </el-button>
+                                    </el-form-item>
+                                </el-form>
+                            </div>
                         </div>
                     </template>
                 </el-table-column>
@@ -246,11 +318,11 @@
             const elementScript = document.createElement('script');
             elementScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/element-plus/2.3.8/index.full.min.js';
             elementScript.onload = function() {
-                // Element Plus 加完成后加载图标
+                // Element Plus 加完成加载图标
                 const iconScript = document.createElement('script');
                 iconScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/element-plus-icons-vue/2.1.0/index.iife.min.js';
                 iconScript.onload = function() {
-                    // 图标加载完成后初始化应用
+                    // 图标加载完成初始化应用
                     initApp();
                 };
                 document.head.appendChild(iconScript);
@@ -280,45 +352,111 @@
                     const lastExportPath = Vue.ref('');  // 存储最后一次导出的路径
                     const exporting = Vue.ref(false);    // 导出状态
                     const levelName = ref('');  // 添加关卡名称的响应式变量
+                    const selectedPositionsExtended = ref({});
+                    const selectedActionsExtended = ref({});
 
                     const tableData = computed(() => {
                         return Object.keys(allActions.value)
                             .map(round => parseInt(round))
-                            .filter(round => round <= 50)  // 限制最大回合数为50
+                            .filter(round => round <= 50)
                             .sort((a, b) => a - b)
-                            .map(round => ({
-                                roundNum: round.toString(),
-                                actions: allActions.value[round.toString()] || []
-                            }));
+                            .map(round => {
+                                const roundStr = round.toString();
+                                const actions = Array.isArray(allActions.value[roundStr]) 
+                                    ? allActions.value[roundStr] 
+                                    : [];
+                                return {
+                                    roundNum: roundStr,
+                                    actions: actions,
+                                    isExtended: allActions.value[roundStr]?.isExtended || false,
+                                    firstLineActions: allActions.value[roundStr]?.firstLineActions || actions.length
+                                };
+                            });
                     });
 
                     const loadAllActions = async () => {
                         try {
                             const response = await axios.get('http://127.0.0.1:5000/api/actions');
-                            allActions.value = response.data;
+                            const actions = response.data;
+                            
+                            // 确保每个回合的动作都是数组
+                            Object.keys(actions).forEach(roundNum => {
+                                const currentActions = Array.isArray(actions[roundNum]) 
+                                    ? [...actions[roundNum]] 
+                                    : [];
+                                
+                                actions[roundNum] = currentActions;
+                                
+                                // 如果有6个及以上动作，自动设置为扩展状态
+                                if (currentActions.length >= 6) {
+                                    actions[roundNum].isExtended = true;
+                                    actions[roundNum].firstLineActions = 4;  // 扩展状态下第一行固定显示4个动作
+                                }
+                                // 如果有5个动作且已经是扩展状态，保持第一行4个
+                                else if (currentActions.length === 5 && actions[roundNum].isExtended) {
+                                    actions[roundNum].firstLineActions = 4;
+                                }
+                                // 其他情况，显示所有动作在第一行
+                                else {
+                                    actions[roundNum].firstLineActions = currentActions.length;
+                                }
+                            });
+                            
+                            allActions.value = actions;
                         } catch (error) {
                             console.error('加载动作失败:', error);
                         }
                     };
 
-                    const addAction = async (roundNum) => {
-                        if (!selectedPositions.value[roundNum] || !selectedActions.value[roundNum]) {
+                    const addAction = async (roundNum, isExtended = false) => {
+                        const position = isExtended 
+                            ? selectedPositionsExtended.value[roundNum]
+                            : selectedPositions.value[roundNum];
+                        const action = isExtended
+                            ? selectedActionsExtended.value[roundNum]
+                            : selectedActions.value[roundNum];
+
+                        if (!position || !action) {
                             ElementPlus.ElMessage.warning('请选择位置和动作');
                             return;
                         }
 
-                        const newAction = `${selectedPositions.value[roundNum]}${selectedActions.value[roundNum]}`;
+                        const newAction = `${position}${action}`;
                         
-                        if (!allActions.value[roundNum]) {
+                        // 确保是数组
+                        if (!Array.isArray(allActions.value[roundNum])) {
                             allActions.value[roundNum] = [];
+                            allActions.value[roundNum].firstLineActions = 0;
                         }
                         
-                        allActions.value[roundNum].push(newAction);
+                        const round = allActions.value[roundNum];
+                        
+                        if (isExtended) {
+                            // 第二行的动作添加到末尾
+                            round.push(newAction);
+                        } else {
+                            // 如果添加后会超过5个动作，自动转为扩展模式
+                            if (!round.isExtended && round.length >= 5) {
+                                round.isExtended = true;
+                                round.firstLineActions = 4;
+                                round.push(newAction);  // 新动作添加到第二行
+                            } else {
+                                // 正常添加到第一行
+                                round.splice(round.firstLineActions, 0, newAction);
+                                round.firstLineActions++;
+                            }
+                        }
                         
                         try {
-                            await axios.put(`http://127.0.0.1:5000/api/actions/${roundNum}`, allActions.value[roundNum]);
-                            selectedPositions.value[roundNum] = '';
-                            selectedActions.value[roundNum] = '';
+                            await axios.put(`http://127.0.0.1:5000/api/actions/${roundNum}`, round);
+                            // 清空选择
+                            if (isExtended) {
+                                selectedPositionsExtended.value[roundNum] = '';
+                                selectedActionsExtended.value[roundNum] = '';
+                            } else {
+                                selectedPositions.value[roundNum] = '';
+                                selectedActions.value[roundNum] = '';
+                            }
                             ElementPlus.ElMessage.success('添加成功');
                         } catch (error) {
                             console.error('添加失败:', error);
@@ -327,9 +465,19 @@
                     };
 
                     const removeAction = async (roundNum, index) => {
-                        allActions.value[roundNum].splice(index, 1);
+                        const round = allActions.value[roundNum];
+                        if (!round) return;
+
+                        // 判断删除的是第一行还是第二行的动作
+                        const isFirstLine = index < round.firstLineActions;
+                        
+                        round.splice(index, 1);
+                        if (isFirstLine) {
+                            round.firstLineActions--;
+                        }
+
                         try {
-                            await axios.put(`http://127.0.0.1:5000/api/actions/${roundNum}`, allActions.value[roundNum]);
+                            await axios.put(`http://127.0.0.1:5000/api/actions/${roundNum}`, round);
                             ElementPlus.ElMessage.success('删除成功');
                         } catch (error) {
                             console.error('删除失败:', error);
@@ -438,6 +586,12 @@
                         return [1, 2, 3, 4, 5].filter(pos => !usedPositions.includes(pos));
                     };
 
+                    // 添加新的方法用于获取第二行的可用位置
+                    const getAvailablePositionsExtended = (actions) => {
+                        const usedPositions = actions.map(action => action[0]);
+                        return ['1', '2', '3', '4', '5'].filter(pos => !usedPositions.includes(pos));
+                    };
+
                     const exportConfig = async () => {
                         try {
                             if (!levelName.value.trim()) {
@@ -476,14 +630,14 @@
                                 path: lastExportPath.value
                             });
                         } catch (error) {
-                            console.error('打开���件夹失败:', error);
+                            console.error('打开件夹失败:', error);
                             ElementPlus.ElMessage.error('打开文件夹失败');
                         }
                     };
 
                     const clearConfig = async () => {
                         try {
-                            await ElementPlus.ElMessageBox.confirm('确认清空所有配置？此操作不可恢复', '警告', {
+                            await ElementPlus.ElMessageBox.confirm('确认清空所有动作？此操作不可恢复', '警告', {
                                 confirmButtonText: '确定',
                                 cancelButtonText: '取消',
                                 type: 'warning'
@@ -491,7 +645,7 @@
                             
                             await axios.post(`${API_BASE_URL}/actions/clear`);
                             allActions.value = {};
-                            ElementPlus.ElMessage.success('配置已清空');
+                            ElementPlus.ElMessage.success('动作已清空');
                         } catch (error) {
                             if (error !== 'cancel') {
                                 console.error('清空失败:', error);
@@ -501,10 +655,28 @@
                     };
 
                     const importConfig = async () => {
-                        // TODO: 实现导入配置的逻辑
+                        // TODO: 实现导入作业的逻辑
                         // 导入成功后设置卡名
                         // levelName.value = importedFileName;
-                        ElementPlus.ElMessage.info('导入配置功能开发中');
+                        ElementPlus.ElMessage.info('导入作业功能开发中');
+                    };
+
+                    const extendRound = (roundNum) => {
+                        if (allActions.value[roundNum]) {
+                            const currentActions = Array.isArray(allActions.value[roundNum]) 
+                                ? [...allActions.value[roundNum]] 
+                                : [];
+                                
+                            // 保持动作数组的结构，但添加额外的属性
+                            allActions.value[roundNum] = currentActions;
+                            // 添加扩展属性
+                            allActions.value[roundNum].isExtended = true;
+                            allActions.value[roundNum].firstLineActions = currentActions.length;
+                            
+                            // 重置第二行的选择
+                            selectedPositionsExtended.value[roundNum] = '';
+                            selectedActionsExtended.value[roundNum] = '';
+                        }
                     };
 
                     onMounted(() => {
@@ -535,6 +707,10 @@
                         Upload: ElementPlusIconsVue.Upload,
                         Delete: ElementPlusIconsVue.Delete,
                         levelName,
+                        selectedPositionsExtended,
+                        selectedActionsExtended,
+                        extendRound,
+                        getAvailablePositionsExtended,
                     }
                 }
             });
