@@ -80,7 +80,7 @@ try:
             if action_config:
                 action_key = f"回合{round_num}行动{i}"
                 config[action_key] = action_config.copy()
-                if i == 5:
+                if i == 9:
                     config[action_key]["on_error"] = [f"检测回合{round_num}"]
                 if int(round_num) == max_round_num and i == len(actions):
                     config[action_key]["next"] = []
@@ -140,7 +140,7 @@ def generate_config(input_path, output_path):
                 if action_config:
                     action_key = f"回合{round_num}行动{i}"
                     result_config[action_key] = action_config.copy()
-                    if i == 5:
+                    if i == 9:
                         result_config[action_key]["on_error"] = [f"检测回合{round_num}"]
                     if int(round_num) == max_round_num and i == len(actions):
                         result_config[action_key]["next"] = []
