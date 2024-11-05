@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maa鸢/司命 - 勘天刻命</title>
+    <!-- Element Plus 的样式 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/element-plus/2.3.8/index.css">
+    <!-- 添加 Element Plus 图标库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/element-plus-icons-vue/2.1.0/index.iife.min.js"></script>
+    <style>
+        input[type="number"] {
+            -webkit-appearance: none;
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
+        
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            appearance: none;
+            margin: 0;
+        }
+        
+        .container {
+            padding: 20px;
+        }
+        
+        .el-tag {
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .el-form--inline .el-form-item {
+            margin-right: 10px;
+        }
+        
+        .round-cell {
+            position: relative;
+        }
+        
+        .round-cell .delete-button {
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .round-cell:hover .delete-button {
+            opacity: 1;
+        }
+        
+        /* 修改这部分，确保按钮悬停时的样式 */
+        .round-cell .delete-button:hover {
+            opacity: 1 !important;
+            color: var(--el-color-danger) !important;
+        }
+        
+        /* 添加表格行高样式 */
+        .el-table__row {
+            height: 54px !important;  /* 根据前5行的高度设置你可以调整这个 */
+        }
+        
+        /* 确保单元格内容垂直居中 */
+        .el-table__cell {
+            vertical-align: middle !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="container">
+            <!-- 动作列表 -->
+            <el-table :data="tableData" style="width: 100%">
+                <!-- 回合列 -->
+                <el-table-column 
+                    label="回合" 
+                    width="140" 
+                    align="center" 
+                    header-align="center">
+                    <template #default="{ row }">
+                        <div class="round-cell" style="display: flex; align-items: center; gap: 8px;">
+                            <el-button
+                                type="danger"
+                                size="small"
+                                link
+                                @click="deleteRound(row.roundNum)"
+                                class="delete-button"
+                                style="padding: 4px; --el-button-hover-text-color: var(--el-color-danger);">
+                                <el-icon><Delete /></el-icon>
+                            </el-button>
+                            <span>第 {{ row.roundNum }} 回合</span>
+                        </div>
+                    </template>
+                </el-table-column>
+                
+                <!-- 动作列 -->
+                <el-table-column label="动作">
+                    <template #default="{ row }">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <!-- 显示现有动作 -->
+                            <div style="display: flex; align-items: center; flex-wrap: wrap;">
+                                <el-tag
+                                    v-for="(action, index) in row.actions"
+                                    :key="index"
+                                    closable
+                                    @close="removeAction(row.roundNum, index)"
+                                    style="margin-right: 10px;">
+                                    {{ action }}
+                                </el-tag>
+                            </div>
+                            
+                            <!-- 添加动作的控件 -->
+                            <el-form :inline="true" style="margin: 0 0 0 40px; display: inline-flex; align-items: center;"
+                                     v-if="row.actions.length < 5">
+                                <el-form-item style="margin: 0 10px 0 0;">
+                                    <el-select 
+                                        v-model="selectedPositions[row.roundNum]" 
+                                        placeholder="位置" 
+                                        size="small" 
+                                        style="width: 70px;">
+                                        <el-option
+                                            v-for="pos in getAvailablePositions(row.actions)"
+                                            :key="pos"
+                                            :label="pos"
+                                            :value="pos">
+                                        </el-option>
+                                    </el-select>
+                                </el-form-item>
+                                <el-form-item style="margin: 0 10px 0 0;">
+                                    <el-select 
+                                        v-model="selectedActions[row.roundNum]" 
+                                        placeholder="动作" 
+                                        size="small" 
+                                        style="width: 80px;">
+                                        <el-option label="普攻" value="普"></el-option>
+                                        <el-option label="上拉" value="上"></el-option>
+                                        <el-option label="下拉" value="下"></el-option>
+                                    </el-select>
+                                </el-form-item>
+                                <el-form-item style="margin: 0;">
+                                    <el-button 
+                                        type="primary" 
+                                        size="small" 
+                                        @click="addAction(row.roundNum)">
+                                        添加
+                                    </el-button>
+                                </el-form-item>
+                            </el-form>
+                        </div>
+                    </template>
+                </el-table-column>
+            </el-table>
+
+            <!-- 底部控制区域 -->
+            <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 50px;">
+                <!-- 第一行：回合控制 -->
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <div style="width: 140px; display: flex; justify-content: center;">
+                        <el-button type="primary" @click="addNewRound">新增回合</el-button>
+                    </div>
+                    
+                    <div style="flex-grow: 1; display: flex; justify-content: center;">
+                        <el-form :inline="true">
+                            <el-form-item label="起始回合" style="margin-bottom: 0;">
+                                <el-input-number v-model="loopStart" :min="1" :max="50" size="small"></el-input-number>
+                            </el-form-item>
+                            <el-form-item label="结束回合" style="margin-bottom: 0;">
+                                <el-input-number v-model="loopEnd" :min="1" :max="50" size="small"></el-input-number>
+                            </el-form-item>
+                            <el-form-item style="margin-bottom: 0;">
+                                <el-button type="primary" @click="generateLoop">生成循环</el-button>
+                            </el-form-item>
+                        </el-form>
+                    </div>
+                </div>
+
+                <!-- 第二行：导出控制 -->
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <el-form :inline="true">
+                        <el-form-item style="margin-bottom: 0;">
+                            <template #label>
+                                <span style="font-weight: bold; font-size: 16px;">作业标题：</span>
+                            </template>
+                            <el-input 
+                                v-model="levelName" 
+                                placeholder="请输入作业名称，如关卡/配队" 
+                                style="width: 250px;"
+                                size="default">
+                            </el-input>
+                        </el-form-item>
+                    </el-form>
+
+                    <div style="display: flex; flex-shrink: 0;">
+                        <el-button 
+                            type="primary" 
+                            @click="importConfig"
+                            plain
+                            style="margin-left: 20px;">
+                            <template #icon><el-icon><Download /></el-icon></template>
+                            导入作业
+                        </el-button>
+
+                        <el-button 
+                            type="danger" 
+                            @click="clearConfig"
+                            plain
+                            style="margin-right: 10px;">
+                            <template #icon><el-icon><Delete /></el-icon></template>
+                            清空作业
+                        </el-button>
+
+                        <el-button-group style="white-space: nowrap;">
+                            <el-button 
+                                type="primary" 
+                                @click="exportConfig" 
+                                :loading="exporting"
+                                :style="{ width: lastExportPath ? '50%' : 'auto' }">
+                                <template #icon><el-icon><Upload /></el-icon></template>
+                                {{ lastExportPath ? '导出' : '导出作业' }}
+                            </el-button>
+                            <el-button 
+                                type="primary" 
+                                @click="openOutputFolder" 
+                                v-if="lastExportPath"
+                                plain
+                                style="width: 50%">
+                                <template #icon><el-icon><Folder /></el-icon></template>
+                                打开
+                            </el-button>
+                        </el-button-group>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 修改脚本加载部分 -->
+
+    <!-- 1. 首先加载 Vue -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.prod.min.js"></script>
+
+    <!-- 2. 等 Vue 加载完后再加载其他依赖 -->
+    <script>
+        // 确保 Vue 已经加载完成
+        window.onload = function() {
+            // 动态加载 Element Plus
+            const elementScript = document.createElement('script');
+            elementScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/element-plus/2.3.8/index.full.min.js';
+            elementScript.onload = function() {
+                // Element Plus 加完成后加载图标
+                const iconScript = document.createElement('script');
+                iconScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/element-plus-icons-vue/2.1.0/index.iife.min.js';
+                iconScript.onload = function() {
+                    // 图标加载完成后初始化应用
+                    initApp();
+                };
+                document.head.appendChild(iconScript);
+            };
+            document.head.appendChild(elementScript);
+        };
+    </script>
+
+    <!-- 3. 加载 Axios -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js"></script>
+
+    <!-- 4. 最后加载应用代码 -->
+    <script>
+        function initApp() {
+            const { createApp, ref, onMounted, computed } = Vue;
+            
+            // 根据当前域名判断使用哪个 API 地址
+            const API_BASE_URL = 'http://127.0.0.1:5000/api';  // 固定使用本地地址
+            
+            const app = createApp({
+                setup() {
+                    const allActions = ref({});
+                    const selectedPositions = ref({});
+                    const selectedActions = ref({});
+                    const loopStart = ref(1);
+                    const loopEnd = ref(1);
+                    const lastExportPath = Vue.ref('');  // 存储最后一次导出的路径
+                    const exporting = Vue.ref(false);    // 导出状态
+                    const levelName = ref('');  // 添加关卡名称的响应式变量
+
+                    const tableData = computed(() => {
+                        return Object.keys(allActions.value)
+                            .map(round => parseInt(round))
+                            .filter(round => round <= 50)  // 限制最大回合数为50
+                            .sort((a, b) => a - b)
+                            .map(round => ({
+                                roundNum: round.toString(),
+                                actions: allActions.value[round.toString()] || []
+                            }));
+                    });
+
+                    const loadAllActions = async () => {
+                        try {
+                            const response = await axios.get('http://127.0.0.1:5000/api/actions');
+                            allActions.value = response.data;
+                        } catch (error) {
+                            console.error('加载动作失败:', error);
+                        }
+                    };
+
+                    const addAction = async (roundNum) => {
+                        if (!selectedPositions.value[roundNum] || !selectedActions.value[roundNum]) {
+                            ElementPlus.ElMessage.warning('请选择位置和动作');
+                            return;
+                        }
+
+                        const newAction = `${selectedPositions.value[roundNum]}${selectedActions.value[roundNum]}`;
+                        
+                        if (!allActions.value[roundNum]) {
+                            allActions.value[roundNum] = [];
+                        }
+                        
+                        allActions.value[roundNum].push(newAction);
+                        
+                        try {
+                            await axios.put(`http://127.0.0.1:5000/api/actions/${roundNum}`, allActions.value[roundNum]);
+                            selectedPositions.value[roundNum] = '';
+                            selectedActions.value[roundNum] = '';
+                            ElementPlus.ElMessage.success('添加成功');
+                        } catch (error) {
+                            console.error('添加失败:', error);
+                            ElementPlus.ElMessage.error('添加失败');
+                        }
+                    };
+
+                    const removeAction = async (roundNum, index) => {
+                        allActions.value[roundNum].splice(index, 1);
+                        try {
+                            await axios.put(`http://127.0.0.1:5000/api/actions/${roundNum}`, allActions.value[roundNum]);
+                            ElementPlus.ElMessage.success('删除成功');
+                        } catch (error) {
+                            console.error('删除失败:', error);
+                            ElementPlus.ElMessage.error('删除失败');
+                        }
+                    };
+
+                    const addNewRound = async () => {
+                        const rounds = Object.keys(allActions.value).map(r => parseInt(r));
+                        
+                        // 找到第一个空缺的回合号
+                        let nextRound = 1;
+                        while (rounds.includes(nextRound) && nextRound <= 50) {
+                            nextRound++;
+                        }
+                        
+                        // 检查是否超过50回合制
+                        if (nextRound > 50) {
+                            ElementPlus.ElMessage.warning('已达到50回合上限');
+                            return;
+                        }
+                        
+                        allActions.value[nextRound] = [];
+                        try {
+                            await axios.post(`http://127.0.0.1:5000/api/actions/add/${nextRound}`);
+                            ElementPlus.ElMessage.success('新增回合成功');
+                        } catch (error) {
+                            console.error('新增回合失败:', error);
+                            ElementPlus.ElMessage.error('新增回合失败');
+                        }
+                    };
+
+                    const generateLoop = async () => {
+                        if (loopStart.value > loopEnd.value) {
+                            ElementPlus.ElMessage.warning('开始回合不能大于结束回合');
+                            return;
+                        }
+
+                        // 检查选定范围内的回合是否都有动作
+                        const hasAllRounds = Array.from(
+                            { length: loopEnd.value - loopStart.value + 1 },
+                            (_, i) => (loopStart.value + i).toString()
+                        ).every(round => round in allActions.value);
+
+                        if (!hasAllRounds) {
+                            ElementPlus.ElMessage.warning('选定范围内的某些回合尚未创建，请先创建所有需要的回合');
+                            return;
+                        }
+
+                        // 计算当前最大回合数
+                        const maxRound = Math.max(...Object.keys(allActions.value).map(Number));
+                        const templateLength = loopEnd.value - loopStart.value + 1;
+
+                        // 检查是否会超50回合限制
+                        if (maxRound + templateLength > 50) {
+                            ElementPlus.ElMessage.warning('添加后将超50回合限制');
+                            return;
+                        }
+
+                        try {
+                            await axios.post('http://127.0.0.1:5000/api/actions/generate-loop', {
+                                start: loopStart.value,
+                                end: loopEnd.value
+                            });
+                            await loadAllActions();
+                            ElementPlus.ElMessage.success('生成循环成功');
+                        } catch (error) {
+                            console.error('生成循环失败:', error);
+                            ElementPlus.ElMessage.error(error.response?.data?.error || '生成循环失败');
+                        }
+                    };
+
+                    const deleteRound = async (roundNum) => {
+                        try {
+                            const currentActions = allActions.value[roundNum] || [];
+                            
+                            // 如果当前回合有动作，先清空动作
+                            if (currentActions.length > 0) {
+                                await axios.put(`${API_BASE_URL}/actions/${roundNum}`, []);
+                                allActions.value[roundNum] = [];
+                                ElementPlus.ElMessage.success('已清空该回合动作');
+                                return;
+                            }
+                            
+                            // 如果回合已经是空的，则删除整个回合
+                            await ElementPlus.ElMessageBox.confirm('确认删除该回合？', '提示', {
+                                confirmButtonText: '确定',
+                                cancelButtonText: '取消',
+                                type: 'warning'
+                            });
+                            
+                            await axios.delete(`${API_BASE_URL}/rounds/${roundNum}`);
+                            delete allActions.value[roundNum];
+                            ElementPlus.ElMessage.success('删除回合成功');
+                        } catch (error) {
+                            if (error !== 'cancel') {
+                                console.error('操作失败:', error);
+                                ElementPlus.ElMessage.error('操作失败');
+                            }
+                        }
+                    };
+
+                    // 获取可用位置
+                    const getAvailablePositions = (actions) => {
+                        const usedPositions = actions.map(action => parseInt(action[0]));
+                        return [1, 2, 3, 4, 5].filter(pos => !usedPositions.includes(pos));
+                    };
+
+                    const exportConfig = async () => {
+                        try {
+                            if (!levelName.value.trim()) {
+                                ElementPlus.ElMessage.warning('请输入关卡名');
+                                return;
+                            }
+                            
+                            exporting.value = true;
+                            const response = await axios.get(`${API_BASE_URL}/export`, {
+                                params: { level_name: levelName.value }
+                            });
+                            
+                            lastExportPath.value = response.data.path;
+                            
+                            ElementPlus.ElMessage({
+                                message: response.data.message,
+                                type: 'success',
+                                duration: 5000
+                            });
+                        } catch (error) {
+                            console.error('导出失败:', error);
+                            ElementPlus.ElMessage.error(error.response?.data?.error || '导出失败');
+                        } finally {
+                            exporting.value = false;
+                        }
+                    };
+
+                    const openOutputFolder = async () => {
+                        try {
+                            if (!lastExportPath.value) {
+                                ElementPlus.ElMessage.warning('请先导出配置文件');
+                                return;
+                            }
+                            
+                            await axios.post(`${API_BASE_URL}/open-folder`, {
+                                path: lastExportPath.value
+                            });
+                        } catch (error) {
+                            console.error('打开���件夹失败:', error);
+                            ElementPlus.ElMessage.error('打开文件夹失败');
+                        }
+                    };
+
+                    const clearConfig = async () => {
+                        try {
+                            await ElementPlus.ElMessageBox.confirm('确认清空所有配置？此操作不可恢复', '警告', {
+                                confirmButtonText: '确定',
+                                cancelButtonText: '取消',
+                                type: 'warning'
+                            });
+                            
+                            await axios.post(`${API_BASE_URL}/actions/clear`);
+                            allActions.value = {};
+                            ElementPlus.ElMessage.success('配置已清空');
+                        } catch (error) {
+                            if (error !== 'cancel') {
+                                console.error('清空失败:', error);
+                                ElementPlus.ElMessage.error('清空失败');
+                            }
+                        }
+                    };
+
+                    const importConfig = async () => {
+                        // TODO: 实现导入配置的逻辑
+                        // 导入成功后设置卡名
+                        // levelName.value = importedFileName;
+                        ElementPlus.ElMessage.info('导入配置功能开发中');
+                    };
+
+                    onMounted(() => {
+                        loadAllActions();
+                    });
+
+                    return {
+                        allActions,
+                        selectedPositions,
+                        selectedActions,
+                        loopStart,
+                        loopEnd,
+                        tableData,
+                        addAction,
+                        removeAction,
+                        addNewRound,
+                        generateLoop,
+                        getAvailablePositions,
+                        deleteRound,
+                        exportConfig,
+                        lastExportPath,
+                        exporting,
+                        openOutputFolder,
+                        Download: ElementPlusIconsVue.Download,
+                        Folder: ElementPlusIconsVue.Folder,
+                        clearConfig,
+                        importConfig,
+                        Upload: ElementPlusIconsVue.Upload,
+                        Delete: ElementPlusIconsVue.Delete,
+                        levelName,
+                    }
+                }
+            });
+            
+            // 注册所有图标
+            for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+                app.component(key, component);
+            }
+            
+            app.use(ElementPlus);
+            app.mount('#app');
+        }
+    </script>
+</body>
+</html>

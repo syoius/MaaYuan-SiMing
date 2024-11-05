@@ -1,0 +1,4 @@
+Flask>=2.0.0
+Flask-CORS>=4.0.0
+pywebview>=4.0
+pyinstaller>=5.0
