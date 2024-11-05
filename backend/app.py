@@ -68,7 +68,11 @@ def handle_round_actions(round_num):
     
     elif request.method == 'PUT':
         try:
+            print(f"收到的数据: {request.json}")
             round_actions = request.json
+            if not isinstance(round_actions, list):
+                print(f"无效的动作数据类型: {type(round_actions)}")
+                return jsonify({'error': '无效的动作数据'}), 400
             actions[round_num] = round_actions
             save_actions(actions)
             print(f"保存回合 {round_num} 成功")
