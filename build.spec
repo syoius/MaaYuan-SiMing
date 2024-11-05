@@ -21,10 +21,8 @@ a = Analysis(
     ],
     hiddenimports=[
         'webview',
-        'pythoncom',
         'win32api',
         'backend.app',
-        'backend',
         'backend.fight_g',
         'flask',
         'flask_cors'
@@ -32,13 +30,37 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=[
+        'cefpython3',
+        'setuptools',
+        'pip',
+        'xml',
+        'unittest',
+        'test',
+        'distutils',
+        'pkg_resources'
+    ],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,
     noarchive=False,
     workpath=os.path.join('build')
 )
+
+# 清空默认的二进制文件列表
+a.binaries = [x for x in a.binaries if not any(
+    pattern in x[0].lower() for pattern in [
+        'cefpython3',
+        'python27',
+        'python34',
+        'python35',
+        'python36',
+        'python37',
+        'python38',
+        'python39',
+    ]
+)]
+
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
 exe = EXE(
@@ -52,8 +74,7 @@ exe = EXE(
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
-    upx_exclude=[],
+    upx=False,
     runtime_tmpdir=None,
     console=False,
     disable_windowed_traceback=False,
