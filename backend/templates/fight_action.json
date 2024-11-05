@@ -3,97 +3,97 @@
         "action": "Swipe",
         "begin" : [77,991,10,1],
         "end" : [77,670,10,1],
-        "post_delay": 2000
+        "post_delay": 3500
         
     },
     "1号位下拉":{
         "action": "Swipe",
         "begin" : [73,985,1,1],
         "end" : [73,1258,1,1],
-        "post_delay": 1000
+        "post_delay": 2000
     },
     "1号位普攻":{
         "action": "Click",
         "target" : [56,960,58,62],
-        "post_delay": 1000
+        "post_delay": 2000
 
     },
     "切换敌人":{
         "action": "Swipe",
         "begin" : [77,991,10,10],
         "end" : [77,670,10,10],
-        "post_delay": 1000
+        "post_delay": 2000
     },
     "2号位上拉":{
         "action": "Swipe",
         "begin" : [220,996,1,1],
         "end" : [225,668,1,1],
-        "post_delay": 2000
+        "post_delay": 3500
     },
     "2号位下拉":{
         "action": "Swipe",
         "begin" : [221,975,1,1],
         "end" : [221,1251,1,1],
-        "post_delay": 1000
+        "post_delay": 2000
     },
     "2号位普攻":{
         "action": "Click",
         "target" : [180,959,76,83],
-        "post_delay": 1000
+        "post_delay": 2000
 
     },
     "3号位上拉":{
         "action": "Swipe",
         "begin" : [357,975,1,1],
         "end" : [357,714,1,1],
-        "post_delay": 2000
+        "post_delay": 3500
     },
     "3号位下拉":{
         "action": "Swipe",
         "begin" : [357,975,1,1],
         "end" : [357,1237,1,1],
-        "post_delay": 1000
+        "post_delay": 2000
     },
     "3号位普攻":{
         "action": "Click",
         "target" : [357,975,10,10],
-        "post_delay": 1000
+        "post_delay": 2000
 
     },
     "4号位上拉":{
         "action": "Swipe",
         "begin" : [496,980,1,1],
         "end" : [496,679,1,1],
-        "post_delay": 2000
+        "post_delay": 3500
     },
     "4号位下拉":{
         "action": "Swipe",
         "begin" : [496,985,1,1],
         "end" : [496,1258,1,1],
-        "post_delay": 1000
+        "post_delay": 2000
     },
     "4号位普攻":{
         "action": "Click",
         "target" : [496,980,10,10],
-        "post_delay": 1000
+        "post_delay": 2000
 
     },
     "5号位上拉":{
         "action": "Swipe",
         "begin" : [646,987,1,1],
         "end" : [642,700,1,1],
-        "post_delay": 2000
+        "post_delay": 3500
     },
     "5号位下拉":{
         "action": "Swipe",
         "begin" : [646,985,1,1],
         "end" : [646,1258,1,1],
-        "post_delay": 1000
+        "post_delay": 2000
     },
     "5号位普攻":{
         "action": "Click",
         "target" : [646,987,10,10],
-        "post_delay": 1000
+        "post_delay": 2000
 
     }
 }
