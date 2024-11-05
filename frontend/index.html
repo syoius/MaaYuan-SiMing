@@ -28,7 +28,9 @@
         
         .el-tag {
             margin-right: 8px;
-            margin-bottom: 8px;
+            margin-bottom: 0;
+            height: 24px;
+            line-height: 24px;
         }
         
         .el-form--inline .el-form-item {
@@ -79,6 +81,15 @@
             transform: scale(1.05);
             transition: transform 0.2s;
         }
+
+        /* 确保动作容器的样式统一 */
+        .actions-container {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            min-height: 32px;
+            padding: 4px 0;  /* 添加适当的上下内边距 */
+        }
     </style>
 </head>
 <body>
@@ -117,7 +128,7 @@
                                 <!-- 动作标签和添加控件 -->
                                 <div style="display: flex; align-items: center; flex: 1;">
                                     <!-- 第一行动作显示 -->
-                                    <div style="display: flex; align-items: center; flex-wrap: wrap;">
+                                    <div style="display: flex; align-items: center; flex-wrap: wrap; min-height: 32px;">
                                         <el-tag
                                             v-for="(action, index) in row.actions.slice(0, row.firstLineActions)"
                                             :key="index"
@@ -194,7 +205,7 @@
                             <!-- 第二行（扩展行）的动作和控件 -->
                             <div v-if="row.isExtended" 
                                  style="display: flex; align-items: center; margin-left: 20px;">
-                                <div style="display: flex; align-items: center; flex-wrap: wrap;">
+                                <div style="display: flex; align-items: center; flex-wrap: wrap; min-height: 32px;">
                                     <el-tag
                                         v-for="(action, index) in row.actions.slice(row.firstLineActions)"
                                         :key="index + row.firstLineActions"
@@ -348,7 +359,7 @@
     <!-- 1. 首先加载 Vue -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.prod.min.js"></script>
 
-    <!-- 2. 等 Vue 加载完后再加载其他依赖 -->
+    <!-- 2. 等 Vue 加载完后再加载其他��赖 -->
     <script>
         // 确保 Vue 已经加载完成
         window.onload = function() {
@@ -430,7 +441,7 @@
                                     actions[roundNum].isExtended = true;
                                     actions[roundNum].firstLineActions = 4;  // 扩展状态下第一行固定显示4个动
                                 }
-                                // 如果有5个动作且已经是扩展状态，保持第一行4个
+                                // ���果有5个动作且已经是扩展状态，保持第一行4个
                                 else if (currentActions.length === 5 && actions[roundNum].isExtended) {
                                     actions[roundNum].firstLineActions = 4;
                                 }
@@ -479,9 +490,9 @@
                                 round.firstLineActions = 4;
                                 round.push(newAction);  // 新动作添加到第二行
                             } else {
-                                // 正常添加到第一行
-                                round.splice(round.firstLineActions, 0, newAction);
-                                round.firstLineActions++;
+                                // 修改：直接将新动作添加到数组末尾
+                                round.push(newAction);
+                                round.firstLineActions = round.length;  // 更新firstLineActions为当前长度
                             }
                         }
                         
@@ -506,7 +517,7 @@
                         const round = allActions.value[roundNum];
                         if (!round) return;
 
-                        // 判断删除的是第一行还是第二行的动作
+                        // 判断删除的是第一行�����第二行的动作
                         const isFirstLine = index < round.firstLineActions;
                         
                         round.splice(index, 1);
@@ -534,14 +545,14 @@
                         
                         // 检查是否超过50回合制
                         if (nextRound > 50) {
-                            ElementPlus.ElMessage.warning('已达到50回合上限');
+                            ElementPlus.ElMessage.warning('���达到50回合上限');
                             return;
                         }
                         
                         allActions.value[nextRound] = [];
                         try {
                             await axios.post(`http://127.0.0.1:5000/api/actions/add/${nextRound}`);
-                            ElementPlus.ElMessage.success('新增回��功');
+                            ElementPlus.ElMessage.success('新增回功');
                         } catch (error) {
                             console.error('新增回合失败:', error);
                             ElementPlus.ElMessage.error('新增回合失败');
@@ -696,7 +707,7 @@
                         // TODO: 实现导入作业的逻辑
                         // 导入成功后设置卡名
                         // levelName.value = importedFileName;
-                        ElementPlus.ElMessage.info('导入作业功能开发中');
+                        ElementPlus.ElMessage.info('导入作业��能开发中');
                     };
 
                     const extendRound = (roundNum) => {
