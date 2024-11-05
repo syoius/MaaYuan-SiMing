@@ -28,7 +28,9 @@
         
         .el-tag {
             margin-right: 8px;
-            margin-bottom: 8px;
+            margin-bottom: 0;
+            height: 24px;
+            line-height: 24px;
         }
         
         .el-form--inline .el-form-item {
@@ -63,6 +65,31 @@
         .el-table__cell {
             vertical-align: middle !important;
         }
+        
+        /* 添加拖拽相关样式 */
+        .el-tag.draggable {
+            cursor: move;
+            user-select: none;
+        }
+
+        .el-tag.dragging {
+            opacity: 0.5;
+            background-color: var(--el-color-primary-light-9);
+        }
+
+        .el-tag.drag-over {
+            transform: scale(1.05);
+            transition: transform 0.2s;
+        }
+
+        /* 确保动作容器的样式统一 */
+        .actions-container {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            min-height: 32px;
+            padding: 4px 0;  /* 添加适当的上下内边距 */
+        }
     </style>
 </head>
 <body>
@@ -92,7 +119,7 @@
                     </template>
                 </el-table-column>
                 
-                <!-- 动作列 -->
+                <!-- 作列 -->
                 <el-table-column label="动作">
                     <template #default="{ row }">
                         <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -101,12 +128,23 @@
                                 <!-- 动作标签和添加控件 -->
                                 <div style="display: flex; align-items: center; flex: 1;">
                                     <!-- 第一行动作显示 -->
-                                    <div style="display: flex; align-items: center; flex-wrap: wrap;">
+                                    <div style="display: flex; align-items: center; flex-wrap: wrap; min-height: 32px;">
                                         <el-tag
                                             v-for="(action, index) in row.actions.slice(0, row.firstLineActions)"
                                             :key="index"
                                             closable
+                                            draggable="true"
+                                            class="draggable"
+                                            :class="{ 
+                                                'dragging': draggedAction === action && 
+                                                           dragSourceRound === row.roundNum && 
+                                                           !dragSourceIsExtended 
+                                            }"
                                             @close="removeAction(row.roundNum, index)"
+                                            @dragstart="handleDragStart($event, row.roundNum, index, action, false)"
+                                            @dragend="handleDragEnd"
+                                            @dragover.prevent="handleDragOver($event, row.roundNum, index, false)"
+                                            @drop="handleDrop($event, row.roundNum, index, false)"
                                             style="margin-right: 10px;">
                                             {{ action }}
                                         </el-tag>
@@ -167,12 +205,23 @@
                             <!-- 第二行（扩展行）的动作和控件 -->
                             <div v-if="row.isExtended" 
                                  style="display: flex; align-items: center; margin-left: 20px;">
-                                <div style="display: flex; align-items: center; flex-wrap: wrap;">
+                                <div style="display: flex; align-items: center; flex-wrap: wrap; min-height: 32px;">
                                     <el-tag
                                         v-for="(action, index) in row.actions.slice(row.firstLineActions)"
                                         :key="index + row.firstLineActions"
                                         closable
+                                        draggable="true"
+                                        class="draggable"
+                                        :class="{ 
+                                            'dragging': draggedAction === action && 
+                                                       dragSourceRound === row.roundNum && 
+                                                       dragSourceIsExtended 
+                                        }"
                                         @close="removeAction(row.roundNum, index + row.firstLineActions)"
+                                        @dragstart="handleDragStart($event, row.roundNum, index + row.firstLineActions, action, true)"
+                                        @dragend="handleDragEnd"
+                                        @dragover.prevent="handleDragOver($event, row.roundNum, index + row.firstLineActions, true)"
+                                        @drop="handleDrop($event, row.roundNum, index + row.firstLineActions, true)"
                                         style="margin-right: 10px;">
                                         {{ action }}
                                     </el-tag>
@@ -310,7 +359,7 @@
     <!-- 1. 首先加载 Vue -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.prod.min.js"></script>
 
-    <!-- 2. 等 Vue 加载完后再加载其他依赖 -->
+    <!-- 2. 等 Vue 加载完后再加载其他��赖 -->
     <script>
         // 确保 Vue 已经加载完成
         window.onload = function() {
@@ -351,7 +400,7 @@
                     const loopEnd = ref(1);
                     const lastExportPath = Vue.ref('');  // 存储最后一次导出的路径
                     const exporting = Vue.ref(false);    // 导出状态
-                    const levelName = ref('');  // 添加关卡名称的响应式变量
+                    const levelName = ref('');  // 添加关卡名称的响式变量
                     const selectedPositionsExtended = ref({});
                     const selectedActionsExtended = ref({});
 
@@ -390,9 +439,9 @@
                                 // 如果有6个及以上动作，自动设置为扩展状态
                                 if (currentActions.length >= 6) {
                                     actions[roundNum].isExtended = true;
-                                    actions[roundNum].firstLineActions = 4;  // 扩展状态下第一行固定显示4个动作
+                                    actions[roundNum].firstLineActions = 4;  // 扩展状态下第一行固定显示4个动
                                 }
-                                // 如果有5个动作且已经是扩展状态，保持第一行4个
+                                // ���果有5个动作且已经是扩展状态，保持第一行4个
                                 else if (currentActions.length === 5 && actions[roundNum].isExtended) {
                                     actions[roundNum].firstLineActions = 4;
                                 }
@@ -441,9 +490,9 @@
                                 round.firstLineActions = 4;
                                 round.push(newAction);  // 新动作添加到第二行
                             } else {
-                                // 正常添加到第一行
-                                round.splice(round.firstLineActions, 0, newAction);
-                                round.firstLineActions++;
+                                // 修改：直接将新动作添加到数组末尾
+                                round.push(newAction);
+                                round.firstLineActions = round.length;  // 更新firstLineActions为当前长度
                             }
                         }
                         
@@ -468,7 +517,7 @@
                         const round = allActions.value[roundNum];
                         if (!round) return;
 
-                        // 判断删除的是第一行还是第二行的动作
+                        // 判断删除的是第一行�����第二行的动作
                         const isFirstLine = index < round.firstLineActions;
                         
                         round.splice(index, 1);
@@ -496,14 +545,14 @@
                         
                         // 检查是否超过50回合制
                         if (nextRound > 50) {
-                            ElementPlus.ElMessage.warning('已达到50回合上限');
+                            ElementPlus.ElMessage.warning('���达到50回合上限');
                             return;
                         }
                         
                         allActions.value[nextRound] = [];
                         try {
                             await axios.post(`http://127.0.0.1:5000/api/actions/add/${nextRound}`);
-                            ElementPlus.ElMessage.success('新增回合成功');
+                            ElementPlus.ElMessage.success('新增回功');
                         } catch (error) {
                             console.error('新增回合失败:', error);
                             ElementPlus.ElMessage.error('新增回合失败');
@@ -533,7 +582,7 @@
 
                         // 检查是否会超50回合限制
                         if (maxRound + templateLength > 50) {
-                            ElementPlus.ElMessage.warning('添加后将超50回合限制');
+                            ElementPlus.ElMessage.warning('添加将超50回合限制');
                             return;
                         }
 
@@ -546,7 +595,7 @@
                             ElementPlus.ElMessage.success('生成循环成功');
                         } catch (error) {
                             console.error('生成循环失败:', error);
-                            ElementPlus.ElMessage.error(error.response?.data?.error || '生成循环失败');
+                            ElementPlus.ElMessage.error(error.response?.data?.error || '生成循环失');
                         }
                     };
 
@@ -554,7 +603,7 @@
                         try {
                             const currentActions = allActions.value[roundNum] || [];
                             
-                            // 如果当前回合有动作，先清空动作
+                            // 如果前回合有动作，先清空动作
                             if (currentActions.length > 0) {
                                 await axios.put(`${API_BASE_URL}/actions/${roundNum}`, []);
                                 allActions.value[roundNum] = [];
@@ -586,7 +635,7 @@
                         return [1, 2, 3, 4, 5].filter(pos => !usedPositions.includes(pos));
                     };
 
-                    // 添加新的方法用于获取第二行的可用位置
+                    // 添加的方法用于获取第二行的可用位置
                     const getAvailablePositionsExtended = (actions) => {
                         const usedPositions = actions.map(action => action[0]);
                         return ['1', '2', '3', '4', '5'].filter(pos => !usedPositions.includes(pos));
@@ -658,7 +707,7 @@
                         // TODO: 实现导入作业的逻辑
                         // 导入成功后设置卡名
                         // levelName.value = importedFileName;
-                        ElementPlus.ElMessage.info('导入作业功能开发中');
+                        ElementPlus.ElMessage.info('导入作业��能开发中');
                     };
 
                     const extendRound = (roundNum) => {
@@ -677,6 +726,102 @@
                             selectedPositionsExtended.value[roundNum] = '';
                             selectedActionsExtended.value[roundNum] = '';
                         }
+                    };
+
+                    const draggedAction = ref(null);
+                    const dragSourceRound = ref(null);
+                    const dragSourceIndex = ref(null);
+                    const dragSourceIsExtended = ref(false);
+
+                    const handleDragStart = (event, roundNum, index, action, isExtended) => {
+                        draggedAction.value = action;
+                        dragSourceRound.value = roundNum;
+                        dragSourceIndex.value = index;
+                        dragSourceIsExtended.value = isExtended;
+                        event.dataTransfer.effectAllowed = 'move';
+                    };
+
+                    const handleDragEnd = () => {
+                        draggedAction.value = null;
+                        dragSourceRound.value = null;
+                        dragSourceIndex.value = null;
+                        dragSourceIsExtended.value = false;
+                    };
+
+                    const handleDragOver = (event, roundNum, index, isExtended) => {
+                        // 只允许同一回合且同一区域（第一行或附加回合）内的拖拽
+                        if (roundNum === dragSourceRound.value && isExtended === dragSourceIsExtended.value) {
+                            event.preventDefault();
+                            event.dataTransfer.dropEffect = 'move';
+                        }
+                    };
+
+                    const handleDrop = async (event, targetRound, targetIndex, isExtended) => {
+                        event.preventDefault();
+                        
+                        // 确保只在同一回合且同一区域内移动
+                        if (draggedAction.value === null || 
+                            targetRound !== dragSourceRound.value || 
+                            isExtended !== dragSourceIsExtended.value) {
+                            return;
+                        }
+                        
+                        const sourceIndex = dragSourceIndex.value;
+                        const actions = [...allActions.value[targetRound]];
+                        const isExtendedState = actions.isExtended;
+                        const firstLineActionsCount = actions.firstLineActions;
+
+                        if (!isExtended) {
+                            // 在第一行内移动
+                            if (sourceIndex < targetIndex) {
+                                // 向右移动
+                                const temp = actions[sourceIndex];
+                                for (let i = sourceIndex; i < targetIndex; i++) {
+                                    actions[i] = actions[i + 1];
+                                }
+                                actions[targetIndex] = temp;
+                            } else if (sourceIndex > targetIndex) {
+                                // 向左移动
+                                const temp = actions[sourceIndex];
+                                for (let i = sourceIndex; i > targetIndex; i--) {
+                                    actions[i] = actions[i - 1];
+                                }
+                                actions[targetIndex] = temp;
+                            }
+                        } else {
+                            // 在扩展行内移动（需要考虑firstLineActionsCount的偏移）
+                            const actualSourceIndex = sourceIndex;
+                            const actualTargetIndex = targetIndex;
+                            
+                            if (actualSourceIndex < actualTargetIndex) {
+                                const temp = actions[actualSourceIndex];
+                                for (let i = actualSourceIndex; i < actualTargetIndex; i++) {
+                                    actions[i] = actions[i + 1];
+                                }
+                                actions[actualTargetIndex] = temp;
+                            } else if (actualSourceIndex > actualTargetIndex) {
+                                const temp = actions[actualSourceIndex];
+                                for (let i = actualSourceIndex; i > actualTargetIndex; i--) {
+                                    actions[i] = actions[i - 1];
+                                }
+                                actions[actualTargetIndex] = temp;
+                            }
+                        }
+
+                        // 保持原有的扩展状态和第一行动作数量
+                        actions.isExtended = isExtendedState;
+                        actions.firstLineActions = firstLineActionsCount;
+
+                        try {
+                            await axios.put(`${API_BASE_URL}/actions/${targetRound}`, actions);
+                            allActions.value[targetRound] = actions;
+                            ElementPlus.ElMessage.success('动作顺序已更新');
+                        } catch (error) {
+                            console.error('更新失败:', error);
+                            ElementPlus.ElMessage.error('更新失败');
+                        }
+                        
+                        handleDragEnd();
                     };
 
                     onMounted(() => {
@@ -711,6 +856,12 @@
                         selectedActionsExtended,
                         extendRound,
                         getAvailablePositionsExtended,
+                        draggedAction,
+                        dragSourceIsExtended,
+                        handleDragStart,
+                        handleDragEnd,
+                        handleDragOver,
+                        handleDrop,
                     }
                 }
             });
@@ -726,3 +877,4 @@
     </script>
 </body>
 </html>
+
