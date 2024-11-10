@@ -204,7 +204,7 @@ def export_config():
             
             if result.returncode != 0:
                 print(f"脚本执行失败: {result.stderr}")
-                return jsonify({'error': f'生成配置文件失败: {result.stderr}'}), 500
+                return jsonify({'error': f'生成配置���败: {result.stderr}'}), 500
         
         # 检查文件是否生成成功
         if not os.path.exists(config_path):
@@ -242,12 +242,57 @@ def open_folder():
 
 @app.route('/api/actions/clear', methods=['POST'])
 def clear_actions():
-    """清空所有配置"""
+    """清所有配置"""
     try:
         save_actions({})  # 保存空字典来清空配置
         return jsonify({'status': 'success'})
     except Exception as e:
         print(f"清空配置失败: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/actions/import', methods=['POST'])
+def import_actions():
+    """导入配置文件"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({'error': '没有上传文件'}), 400
+            
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': '没有选择文件'}), 400
+            
+        # 创建必要的目录
+        data_dir = get_data_dir()
+        os.makedirs(data_dir, exist_ok=True)
+        temp_dir = os.path.join(data_dir, 'temp')
+        os.makedirs(temp_dir, exist_ok=True)
+        
+        temp_path = os.path.join(temp_dir, 'temp_import.json')
+        
+        # 保存上传的文件
+        file.save(temp_path)
+        
+        # 读取配置文件
+        with open(temp_path, 'r', encoding='utf-8') as f:
+            config_data = json.load(f)
+            
+        # 导入配置
+        import fight_g
+        round_actions = fight_g.reverse_config(config_data)  # 使用 reverse_config 而不是 import_config
+        
+        # 保存导入的配置
+        save_actions(round_actions)
+        
+        # 清理临时文件
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+        
+        return jsonify({
+            'message': '导入成功',
+            'actions': round_actions
+        })
+    except Exception as e:
+        print(f"导入失败: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
