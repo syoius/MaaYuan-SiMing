@@ -56,8 +56,8 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                 "post_delay": 1000,
             }
 
-            # 设置每个回合中的行动
-            for i, action_group in enumerate(actions, start=1):
+        # 设置每个回合中的行动
+        for i, action_group in enumerate(actions, start=1):
                 action = action_group[0]  # 第一个元素是动作
                 action_config = get_action(action)
                 if action_config:
@@ -87,6 +87,61 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                     if i == 9:
                         result_config[action_key]["on_error"] = [f"检测回合{round_num}"]
 
+
+                # 根据关卡类别设置重开后的导航节点
+
+
+        # 修改重开配置的next值
+        if level_type == '主线':
+            next_node = "抄作业找到关卡-主线"
+        elif level_type == '洞窟':
+            next_node = "抄作业找到关卡-洞窟"
+        else:
+            next_node = "抄作业找到关卡-OCR"
+
+        result_config["抄作业点左上角重开"] = {
+            "action": "Click",
+            "target": [34, 21, 41, 41],
+            "pre_delay": 2000,
+            "post_delay": 2000,
+            "next": ["抄作业确定左上角重开", next_node]
+        }
+
+        result_config["抄作业确定左上角重开"] = {
+            "is_sub": True,
+            "recognition": "OCR",
+            "expected": "确定",
+            "replace": ["確定", "确定"],
+            "roi": [434,737,129,61],
+            "pre_wait_freezes": 500,
+            "post_delay": 2000,
+            "action": "Click"
+        }
+
+        # 根据关卡类别和识别名称设置对应的导航节点
+        if level_type == '洞窟':
+            result_config["抄作业找到关卡-洞窟"] = {
+                "recognition": "OCR",
+                "expected": level_recognition_name,  # 使用传入的识别名称
+                "roi": [0,249,720,1030],
+                "action": "Click",
+                "target_offset": [-27, 443, -22, -69],
+                "pre_delay": 2000,
+                "next": ["抄作业战斗开始"],
+                "timeout": 20000
+            }
+        elif level_type != '主线':  # 非主线且非洞窟的情况
+            result_config["抄作业找到关卡-OCR"] = {
+                "recognition": "OCR",
+                "expected": level_recognition_name,  # 使用传入的识别名称
+                "roi": [0,249,720,1030],
+                "action": "Click",
+                "pre_delay": 2000,
+                "next": ["抄作业战斗开始"],
+                "timeout": 20000
+            }
+
+
         # 加载必要动作
         result_config["抄作业全灭重开"] = {
             "recognition": "OCR",
@@ -114,17 +169,6 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
             "timeout": 20000
         }
 
-        result_config["抄作业确定左上角重开"] = {
-            "is_sub": True,
-            "recognition": "OCR",
-            "expected": "确定",
-            "replace": ["確定", "确定"],
-            "roi": [434,737,129,61],
-            "pre_wait_freezes": 500,
-            "post_delay": 2000,
-            "action": "Click"
-        }
-
         result_config["抄作业战斗开始"] = {
             "recognition": "OCR",
             "expected": "开始战斗",
@@ -144,46 +188,6 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
             "roi": [635, 610, 85, 95],
             "action": "Click"
         }
-
-        # 根据关卡类别设置重开后的导航节点
-        if level_type == '主线':
-            next_node = "抄作业找到关卡-主线"
-        elif level_type == '洞窟':
-            next_node = "抄作业找到关卡-洞窟"
-        else:
-            next_node = "抄作业找到关卡-OCR"
-
-        # 修改重开配置的next值
-        result_config["抄作业点左上角重开"] = {
-            "action": "Click",
-            "target": [34, 21, 41, 41],
-            "pre_delay": 2000,
-            "post_delay": 2000,
-            "next": ["抄作业确定左上角重开", next_node]
-        }
-
-        # 根据关卡类别和识别名称设置对应的导航节点
-        if level_type == '洞窟':
-            result_config["抄作业找到关卡-洞窟"] = {
-                "recognition": "OCR",
-                "expected": level_recognition_name,  # 使用传入的识别名称
-                "roi": [0,249,720,1030],
-                "action": "Click",
-                "target_offset": [-27, 443, -22, -69],
-                "pre_delay": 2000,
-                "next": ["抄作业战斗开始"],
-                "timeout": 20000
-            }
-        elif level_type != '主线':  # 非主线且非洞窟的情况
-            result_config["抄作业找到关卡-OCR"] = {
-                "recognition": "OCR",
-                "expected": level_recognition_name,  # 使用传入的识别名称
-                "roi": [0,249,720,1030],
-                "action": "Click",
-                "pre_delay": 2000,
-                "next": ["抄作业战斗开始"],
-                "timeout": 20000
-            }
 
         # 保存输出配置
         with open(output_path, 'w', encoding='utf-8') as f:
