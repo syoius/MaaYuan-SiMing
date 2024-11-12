@@ -41,10 +41,10 @@ def create_window():
     webview.create_window(
         'MAA鸢/司命 - 勘天篆命',
         'http://127.0.0.1:5000',
-        width=800,
-        height=600,
+        width=1500,
+        height=800,
         resizable=True,
-        min_size=(1600, 900)
+        min_size=(800, 600)
     )
     webview.start()
 
