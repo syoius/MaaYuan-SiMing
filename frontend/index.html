@@ -390,6 +390,32 @@
             "
           >
             <el-form :inline="true">
+              <!-- 添加关卡类别选择 -->
+              <el-form-item style="margin-bottom: 0">
+                <el-select
+                  v-model="levelType"
+                  placeholder="关卡类别"
+                  style="width: 120px"
+                  size="default"
+                >
+                  <el-option label="主线" value="主线"></el-option>
+                  <el-option label="洞窟" value="洞窟"></el-option>
+                  <el-option label="其他" value="其他"></el-option>
+                </el-select>
+              </el-form-item>
+
+              <!-- 添加关卡名称（识别用）输入框 -->
+              <el-form-item style="margin-bottom: 0">
+                <el-input
+                  v-model="levelRecognitionName"
+                  placeholder="关卡序号/名，用于OCR识别"
+                  style="width: 200px"
+                  size="default"
+                >
+                </el-input>
+              </el-form-item>
+
+              <!-- 原有的作业标题输入框 -->
               <el-form-item style="margin-bottom: 0">
                 <template #label>
                   <span style="font-weight: bold; font-size: 16px"
@@ -496,7 +522,7 @@
     <!-- 4. 最后加载应用代码 -->
     <script>
       function initApp() {
-        const { createApp, ref, onMounted, computed } = Vue;
+        const { createApp, ref, onMounted, computed, watch } = Vue;
 
         // 根据当前域名判断使用哪个 API 地址
         const API_BASE_URL = "http://127.0.0.1:5000/api"; // 固定使用本地地址
@@ -510,10 +536,14 @@
             const loopEnd = ref(1);
             const lastExportPath = Vue.ref(""); // 存储最后一次导出的路径
             const exporting = Vue.ref(false); // 导出状态
-            const levelName = ref(""); // 添加关卡名称的响式变量
+            const levelName = ref(localStorage.getItem("levelName") || ""); // 添加关卡名称的响式变量
             const selectedPositionsExtended = ref({});
             const selectedActionsExtended = ref({});
             const selectedRestart = ref({});
+            const levelType = ref(localStorage.getItem("levelType") || ""); // 添加关卡类别响应式变量
+            const levelRecognitionName = ref(
+              localStorage.getItem("levelRecognitionName") || ""
+            ); // 添加关卡名称（识别用）响应式变量
 
             const tableData = computed(() => {
               return Object.keys(allActions.value)
@@ -792,13 +822,25 @@
             const exportConfig = async () => {
               try {
                 if (!levelName.value.trim()) {
-                  ElementPlus.ElMessage.warning("请输入关卡名");
+                  ElementPlus.ElMessage.warning("请输入作业标题");
+                  return;
+                }
+                if (!levelType.value) {
+                  ElementPlus.ElMessage.warning("请选择关卡类别");
+                  return;
+                }
+                if (!levelRecognitionName.value.trim()) {
+                  ElementPlus.ElMessage.warning("请输入关卡名称（识别用）");
                   return;
                 }
 
                 exporting.value = true;
                 const response = await axios.get(`${API_BASE_URL}/export`, {
-                  params: { level_name: levelName.value },
+                  params: {
+                    level_name: levelName.value,
+                    level_type: levelType.value,
+                    level_recognition_name: levelRecognitionName.value,
+                  },
                 });
 
                 lastExportPath.value = response.data.path;
@@ -848,6 +890,17 @@
 
                 await axios.post(`${API_BASE_URL}/actions/clear`);
                 allActions.value = {};
+
+                // 清空存储的值
+                localStorage.removeItem("levelType");
+                localStorage.removeItem("levelRecognitionName");
+                localStorage.removeItem("levelName");
+
+                // 清空响应式变量
+                levelType.value = "";
+                levelRecognitionName.value = "";
+                levelName.value = "";
+
                 ElementPlus.ElMessage.success("动作已清空");
               } catch (error) {
                 if (error !== "cancel") {
@@ -887,6 +940,14 @@
 
                     // 更新动作配置
                     allActions.value = response.data.actions;
+
+                    // 设置关卡类型和识别名称
+                    if (response.data.config_info) {
+                      levelType.value = response.data.config_info.level_type;
+                      levelRecognitionName.value =
+                        response.data.config_info.level_recognition_name;
+                    }
+
                     ElementPlus.ElMessage.success("导入成功");
                   } catch (error) {
                     console.error("导入失败:", error);
@@ -1100,6 +1161,18 @@
               }
             };
 
+            watch(levelType, (newValue) => {
+              localStorage.setItem("levelType", newValue);
+            });
+
+            watch(levelRecognitionName, (newValue) => {
+              localStorage.setItem("levelRecognitionName", newValue);
+            });
+
+            watch(levelName, (newValue) => {
+              localStorage.setItem("levelName", newValue);
+            });
+
             onMounted(() => {
               loadAllActions();
             });
@@ -1140,6 +1213,8 @@
               handleDrop,
               selectedRestart,
               addRestart,
+              levelType,
+              levelRecognitionName,
             };
           },
         });

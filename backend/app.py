@@ -170,6 +170,8 @@ def export_config():
     """导出生成的配置文件"""
     try:
         level_name = request.args.get('level_name', 'generated_config')
+        level_type = request.args.get('level_type', '')  # 获取关卡类别
+        level_recognition_name = request.args.get('level_recognition_name', '')  # 获取识别用名称
 
         if getattr(sys, 'frozen', False):
             # 打包环境
@@ -191,12 +193,12 @@ def export_config():
 
         if getattr(sys, 'frozen', False):
             # 打包环境的处理逻辑
-            fight_g.generate_config(temp_config_path, config_path)
+            fight_g.generate_config(temp_config_path, config_path, level_type, level_recognition_name)
         else:
             # 开发环境下运行脚本
             python_executable = sys.executable
             result = subprocess.run(
-                [python_executable, script_path, temp_config_path, config_path],
+                [python_executable, script_path, temp_config_path, config_path, level_type, level_recognition_name],
                 capture_output=True,
                 text=True,
                 cwd=os.path.dirname(script_path)
@@ -204,7 +206,7 @@ def export_config():
 
             if result.returncode != 0:
                 print(f"脚本执行失败: {result.stderr}")
-                return jsonify({'error': f'生成配置���败: {result.stderr}'}), 500
+                return jsonify({'error': f'生成配置失败: {result.stderr}'}), 500
 
         # 检查文件是否生成成功
         if not os.path.exists(config_path):
@@ -278,7 +280,9 @@ def import_actions():
 
         # 导入配置
         import fight_g
-        round_actions = fight_g.reverse_config(config_data)  # 使用 reverse_config 而不是 import_config
+        result = fight_g.reverse_config(config_data)
+        round_actions = result['actions']
+        config_info = result['config_info']
 
         # 保存导入的配置
         save_actions(round_actions)
@@ -289,7 +293,8 @@ def import_actions():
 
         return jsonify({
             'message': '导入成功',
-            'actions': round_actions
+            'actions': round_actions,
+            'config_info': config_info
         })
     except Exception as e:
         print(f"导入失败: {str(e)}")

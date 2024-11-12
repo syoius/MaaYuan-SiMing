@@ -20,7 +20,7 @@ def get_template_path():
     else:
         return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates', 'fight_action.json')
 
-def generate_config(input_path, output_path):
+def generate_config(input_path, output_path, level_type='', level_recognition_name=''):
     """生成配置文件"""
     try:
         # 读取输入配置
@@ -95,20 +95,30 @@ def generate_config(input_path, output_path):
             "pre_wait_freezes": 500,
             "post_delay": 2000,
             "action": "Click",
-            "next": ["抄作业战斗开始"]
+            "next": ["抄作业战斗开始"],
+            "timeout": 20000
         }
 
-        result_config["抄作业点左上角重开"] = {
+        result_config["抄作业找到关卡-主线"] = {
+            "recognition": "ColorMatch",
+            "roi": [98, 527, 519, 43],
+            "method": 4,
+            "upper": [225, 131, 131],
+            "lower": [170, 50, 50],
+            "count": 4500,
+            "order_by": "Score",
+            "connected": True,
             "action": "Click",
-            "target": [34, 21, 41, 41],
             "pre_delay": 2000,
-            "post_delay": 2000,
-            "next": ["抄作业确定左上角重开"]
+            "next": ["抄作业战斗开始"],
+            "timeout": 20000
         }
 
         result_config["抄作业确定左上角重开"] = {
+            "is_sub": True,
             "recognition": "OCR",
             "expected": "确定",
+            "replace": ["確定", "确定"],
             "roi": [434,737,129,61],
             "pre_wait_freezes": 500,
             "post_delay": 2000,
@@ -118,11 +128,62 @@ def generate_config(input_path, output_path):
         result_config["抄作业战斗开始"] = {
             "recognition": "OCR",
             "expected": "开始战斗",
+            "replace": ["開始戰鬥", "开始战斗"],
             "roi": [264, 1158, 201, 51],
             "action": "Click",
             "pre_wait_freezes": 500,
-            "next": ["检测回合1"]
+            "next": ["抄作业切一下手动","检测回合1"],
+            "timeout": 20000
         }
+
+        result_config["抄作业切一下手动"] = {
+            "is_sub": True,
+            "recognition": "OCR",
+            "expected": "自动",
+            "replace": ["自動", "自动"],
+            "roi": [635, 610, 85, 95],
+            "action": "Click"
+        }
+
+        # 根据关卡类别设置重开后的导航节点
+        if level_type == '主线':
+            next_node = "抄作业找到关卡-主线"
+        elif level_type == '洞窟':
+            next_node = "抄作业找到关卡-洞窟"
+        else:
+            next_node = "抄作业找到关卡-OCR"
+
+        # 修改重开配置的next值
+        result_config["抄作业点左上角重开"] = {
+            "action": "Click",
+            "target": [34, 21, 41, 41],
+            "pre_delay": 2000,
+            "post_delay": 2000,
+            "next": ["抄作业确定左上角重开", next_node]
+        }
+
+        # 根据关卡类别和识别名称设置对应的导航节点
+        if level_type == '洞窟':
+            result_config["抄作业找到关卡-洞窟"] = {
+                "recognition": "OCR",
+                "expected": level_recognition_name,  # 使用传入的识别名称
+                "roi": [0,249,720,1030],
+                "action": "Click",
+                "target_offset": [-27, 443, -22, -69],
+                "pre_delay": 2000,
+                "next": ["抄作业战斗开始"],
+                "timeout": 20000
+            }
+        elif level_type != '主线':  # 非主线且非洞窟的情况
+            result_config["抄作业找到关卡-OCR"] = {
+                "recognition": "OCR",
+                "expected": level_recognition_name,  # 使用传入的识别名称
+                "roi": [0,249,720,1030],
+                "action": "Click",
+                "pre_delay": 2000,
+                "next": ["抄作业战斗开始"],
+                "timeout": 20000
+            }
 
         # 保存输出配置
         with open(output_path, 'w', encoding='utf-8') as f:
@@ -137,6 +198,25 @@ def generate_config(input_path, output_path):
 def reverse_config(config_data):
     """从生成的配置文件反向生成回合动作配置"""
     round_actions = {}
+    config_info = {
+        'level_type': '',
+        'level_recognition_name': ''
+    }
+
+    # 检测关卡类型和识别名称
+    restart_node = config_data.get("抄作业点左上角重开", {})
+    next_nodes = restart_node.get("next", [])
+    
+    if len(next_nodes) >= 2:  # 确保有第二个节点
+        next_node = next_nodes[1]  # 获取第二个节点
+        if next_node == "抄作业找到关卡-主线":
+            config_info['level_type'] = '主线'
+        elif next_node == "抄作业找到关卡-洞窟":
+            config_info['level_type'] = '洞窟'
+            config_info['level_recognition_name'] = config_data.get("抄作业找到关卡-洞窟", {}).get("expected", "")
+        elif next_node == "抄作业找到关卡-OCR":
+            config_info['level_type'] = '其他'
+            config_info['level_recognition_name'] = config_data.get("抄作业找到关卡-OCR", {}).get("expected", "")
 
     # 首先按回合号分组处理所有动作
     for key, value in config_data.items():
@@ -204,13 +284,19 @@ def reverse_config(config_data):
 
             round_actions[round_num].append(action_group)
 
-    return round_actions
+    return {
+        'actions': round_actions,
+        'config_info': config_info
+    }
 
 if __name__ == '__main__':
-    if len(sys.argv) != 3:
-        print("Usage: python fight_g.py input_path output_path")
+    if len(sys.argv) < 3:
+        print("Usage: python fight_g.py input_path output_path [level_type] [level_recognition_name]")
         sys.exit(1)
 
     input_path = sys.argv[1]
     output_path = sys.argv[2]
-    generate_config(input_path, output_path)
+    level_type = sys.argv[3] if len(sys.argv) > 3 else ''
+    level_recognition_name = sys.argv[4] if len(sys.argv) > 4 else ''
+
+    generate_config(input_path, output_path, level_type, level_recognition_name)
