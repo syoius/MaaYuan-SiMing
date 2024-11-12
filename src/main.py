@@ -36,15 +36,15 @@ def create_window():
     # 启动 Flask 服务
     server_thread = Thread(target=run_server, daemon=True)
     server_thread.start()
-    
+
     # 创建窗口
     webview.create_window(
-        'MAA鸢/司命 - 勘天篆命', 
+        'MAA鸢/司命 - 勘天篆命',
         'http://127.0.0.1:5000',
         width=800,
         height=600,
         resizable=True,
-        min_size=(800, 600)
+        min_size=(1600, 900)
     )
     webview.start()
 
@@ -52,5 +52,5 @@ if __name__ == '__main__':
     # 设置工作目录
     if getattr(sys, 'frozen', False):
         os.chdir(os.path.dirname(sys.executable))
-    
-    create_window() 
+
+    create_window()

@@ -395,7 +395,7 @@
                 <el-select
                   v-model="levelType"
                   placeholder="关卡类别"
-                  style="width: 120px"
+                  style="width: 100px"
                   size="default"
                 >
                   <el-option label="主线" value="主线"></el-option>
@@ -408,8 +408,8 @@
               <el-form-item style="margin-bottom: 0">
                 <el-input
                   v-model="levelRecognitionName"
-                  placeholder="关卡序号/名，用于OCR识别"
-                  style="width: 200px"
+                  placeholder="关卡序号/名"
+                  style="width: 95px"
                   size="default"
                 >
                 </el-input>
@@ -431,6 +431,10 @@
                 </el-input>
               </el-form-item>
             </el-form>
+
+            <div style="font-size: 12px; color: #909399; margin-top: 4px">
+              使用“点左上角重开”时，必填关卡类别和关卡序号（识别关卡入口用）
+            </div>
 
             <div style="display: flex; flex-shrink: 0">
               <el-button
