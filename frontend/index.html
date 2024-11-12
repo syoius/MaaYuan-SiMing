@@ -566,6 +566,33 @@
                 });
             });
 
+            const saveStateToLocalStorage = (
+              roundNum,
+              isExtended,
+              firstLineActions
+            ) => {
+              const key = `round_${roundNum}_state`;
+              const state = {
+                isExtended,
+                firstLineActions,
+              };
+              localStorage.setItem(key, JSON.stringify(state));
+            };
+
+            const loadStateFromLocalStorage = (roundNum, actionsLength) => {
+              const key = `round_${roundNum}_state`;
+              const savedState = localStorage.getItem(key);
+              if (savedState) {
+                const state = JSON.parse(savedState);
+                return state;
+              }
+              // 默认状态
+              return {
+                isExtended: actionsLength > 5,
+                firstLineActions: actionsLength > 5 ? 4 : actionsLength,
+              };
+            };
+
             const loadAllActions = async () => {
               try {
                 const response = await axios.get(
@@ -579,26 +606,16 @@
                     ? [...actions[roundNum]]
                     : [];
 
-                  // 保持扩展状态和第一行动作数量的属性
-                  const isExtended = actions[roundNum]?.isExtended || false;
-                  const firstLineActions =
-                    actions[roundNum]?.firstLineActions ||
-                    currentActions.length;
+                  // 从 localStorage 加载状态
+                  const state = loadStateFromLocalStorage(
+                    roundNum,
+                    currentActions.length
+                  );
 
                   // 重新赋值，保持扩展状态
                   actions[roundNum] = currentActions;
-                  actions[roundNum].isExtended = isExtended;
-                  actions[roundNum].firstLineActions = firstLineActions;
-
-                  // 如果有6个及以上动作，自动设置为扩展状态
-                  if (currentActions.length >= 6 && !isExtended) {
-                    actions[roundNum].isExtended = true;
-                    actions[roundNum].firstLineActions = 4;
-                  }
-                  // 如果有5个动作且已经是扩展状态，保持第一行4个
-                  else if (currentActions.length === 5 && isExtended) {
-                    actions[roundNum].firstLineActions = 4;
-                  }
+                  actions[roundNum].isExtended = state.isExtended;
+                  actions[roundNum].firstLineActions = state.firstLineActions;
                 });
 
                 allActions.value = actions;
@@ -667,6 +684,13 @@
                 allActions.value[roundNum].firstLineActions =
                   firstLineActionsCount;
 
+                // 保存状态到 localStorage
+                saveStateToLocalStorage(
+                  roundNum,
+                  isExtendedState,
+                  firstLineActionsCount
+                );
+
                 // 重置选择
                 if (isExtended) {
                   selectedPositionsExtended.value[roundNum] = "";
@@ -693,6 +717,12 @@
               round.splice(index, 1);
               if (isFirstLine) {
                 round.firstLineActions--;
+                // 保存更新后的状态
+                saveStateToLocalStorage(
+                  roundNum,
+                  round.isExtended,
+                  round.firstLineActions
+                );
               }
 
               try {
@@ -911,7 +941,12 @@
                 await axios.post(`${API_BASE_URL}/actions/clear`);
                 allActions.value = {};
 
-                // 清空存储的值
+                // 清除所有回合状态的 localStorage
+                for (let i = 1; i <= 50; i++) {
+                  localStorage.removeItem(`round_${i}_state`);
+                }
+
+                // 清空其他存储的值
                 localStorage.removeItem("levelType");
                 localStorage.removeItem("levelRecognitionName");
                 localStorage.removeItem("levelName");
