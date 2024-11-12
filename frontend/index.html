@@ -625,16 +625,36 @@
                   ? [...allActions.value[roundNum]]
                   : [];
 
-                // 保持扩展状态和第一行动作数量
+                // 保持扩展状态
                 const isExtendedState =
                   allActions.value[roundNum]?.isExtended || false;
-                const firstLineActionsCount =
-                  allActions.value[roundNum]?.firstLineActions ||
-                  currentActions.length;
+
+                // 更新 firstLineActions 的计算
+                let firstLineActionsCount;
+                if (isExtended) {
+                  // 如果是在扩展行添加，保持原有的 firstLineActions
+                  firstLineActionsCount =
+                    allActions.value[roundNum]?.firstLineActions || 4;
+                } else {
+                  // 如果是在第一行添加，增加 firstLineActions
+                  firstLineActionsCount =
+                    (allActions.value[roundNum]?.firstLineActions || 0) + 1;
+                }
 
                 // 创建新动作数组
                 const newAction = [`${position}${action}`];
-                currentActions.push(newAction);
+
+                if (isExtended) {
+                  // 在扩展行添加到末尾
+                  currentActions.push(newAction);
+                } else {
+                  // 在第一行添加到 firstLineActions 的位置
+                  currentActions.splice(
+                    firstLineActionsCount - 1,
+                    0,
+                    newAction
+                  );
+                }
 
                 // 更新动作数组，同时保持扩展状态
                 await axios.put(
