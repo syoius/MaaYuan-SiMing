@@ -163,9 +163,9 @@
                       </el-tag>
                     </div>
 
-                    <!-- 第一行的添加动作控件 -->
+                    <!-- 第一行的添加动作控件，在未展开时显示 -->
                     <el-form
-                      v-if="row.firstLineActions < 5"
+                      v-if="row.firstLineActions < 5 && !row.isExtended"
                       :inline="true"
                       style="
                         margin: 0;
@@ -212,6 +212,37 @@
                       </el-form-item>
                     </el-form>
                   </div>
+
+                  <!-- 添加重开按钮和选择 -->
+                  <el-form :inline="true" style="margin: 0; margin-left: 10px">
+                    <el-form-item style="margin: 0 10px 0 0">
+                      <el-select
+                        v-model="selectedRestart[row.roundNum]"
+                        placeholder="重开类型"
+                        size="small"
+                        style="width: 120px"
+                      >
+                        <el-option
+                          label="全灭重开"
+                          value="全灭重开"
+                        ></el-option>
+                        <el-option
+                          label="点左上角重开"
+                          value="点左上角重开"
+                        ></el-option>
+                      </el-select>
+                    </el-form-item>
+                    <el-form-item style="margin: 0">
+                      <el-button
+                        type="warning"
+                        size="small"
+                        @click="addRestart(row.roundNum)"
+                        :disabled="!selectedRestart[row.roundNum]"
+                      >
+                        添加重开
+                      </el-button>
+                    </el-form-item>
+                  </el-form>
 
                   <!-- 附加回合按钮 -->
                   <el-button
@@ -482,6 +513,7 @@
             const levelName = ref(""); // 添加关卡名称的响式变量
             const selectedPositionsExtended = ref({});
             const selectedActionsExtended = ref({});
+            const selectedRestart = ref({});
 
             const tableData = computed(() => {
               return Object.keys(allActions.value)
@@ -517,23 +549,25 @@
                     ? [...actions[roundNum]]
                     : [];
 
+                  // 保持扩展状态和第一行动作数量的属性
+                  const isExtended = actions[roundNum]?.isExtended || false;
+                  const firstLineActions =
+                    actions[roundNum]?.firstLineActions ||
+                    currentActions.length;
+
+                  // 重新赋值，保持扩展状态
                   actions[roundNum] = currentActions;
+                  actions[roundNum].isExtended = isExtended;
+                  actions[roundNum].firstLineActions = firstLineActions;
 
                   // 如果有6个及以上动作，自动设置为扩展状态
-                  if (currentActions.length >= 6) {
+                  if (currentActions.length >= 6 && !isExtended) {
                     actions[roundNum].isExtended = true;
-                    actions[roundNum].firstLineActions = 4; // 扩展状态下第一行固定显示4个动
-                  }
-                  // 如果有5个动作且已经是扩展状态，保持第一行4个
-                  else if (
-                    currentActions.length === 5 &&
-                    actions[roundNum].isExtended
-                  ) {
                     actions[roundNum].firstLineActions = 4;
                   }
-                  // 其他情况，显示所有动作在第一行
-                  else {
-                    actions[roundNum].firstLineActions = currentActions.length;
+                  // 如果有5个动作且已经是扩展状态，保持第一行4个
+                  else if (currentActions.length === 5 && isExtended) {
+                    actions[roundNum].firstLineActions = 4;
                   }
                 });
 
@@ -545,11 +579,11 @@
 
             const addAction = async (roundNum, isExtended) => {
               try {
-                const position = isExtended 
-                  ? selectedPositionsExtended.value[roundNum] 
+                const position = isExtended
+                  ? selectedPositionsExtended.value[roundNum]
                   : selectedPositions.value[roundNum];
-                const action = isExtended 
-                  ? selectedActionsExtended.value[roundNum] 
+                const action = isExtended
+                  ? selectedActionsExtended.value[roundNum]
                   : selectedActions.value[roundNum];
 
                 if (!position || !action) {
@@ -561,22 +595,27 @@
                   ? [...allActions.value[roundNum]]
                   : [];
 
-                // 创建新动作
-                const newAction = `${position}${action}`;
-                
-                // 在数组末尾添加新动作
+                // 保持扩展状态和第一行动作数量
+                const isExtendedState =
+                  allActions.value[roundNum]?.isExtended || false;
+                const firstLineActionsCount =
+                  allActions.value[roundNum]?.firstLineActions ||
+                  currentActions.length;
+
+                // 创建新动作数组
+                const newAction = [`${position}${action}`];
                 currentActions.push(newAction);
 
-                // 保持扩展状态和第一行动作数量
-                if (currentActions.isExtended) {
-                  currentActions.isExtended = true;
-                  currentActions.firstLineActions = isExtended 
-                    ? currentActions.firstLineActions 
-                    : currentActions.length;
-                }
+                // 更新动作数组，同时保持扩展状态
+                await axios.put(
+                  `${API_BASE_URL}/actions/${roundNum}`,
+                  currentActions
+                );
 
-                await axios.put(`${API_BASE_URL}/actions/${roundNum}`, currentActions);
                 allActions.value[roundNum] = currentActions;
+                allActions.value[roundNum].isExtended = isExtendedState;
+                allActions.value[roundNum].firstLineActions =
+                  firstLineActionsCount;
 
                 // 重置选择
                 if (isExtended) {
@@ -732,8 +771,8 @@
 
             // 获取可用位置
             const getAvailablePositions = (actions) => {
-              const usedPositions = actions.map((action) =>
-                parseInt(action[0])
+              const usedPositions = actions.map((actionGroup) =>
+                parseInt(actionGroup[0][0])
               );
               return [1, 2, 3, 4, 5].filter(
                 (pos) => !usedPositions.includes(pos)
@@ -742,7 +781,9 @@
 
             // 添加的方法用于获取第二行的可用位置
             const getAvailablePositionsExtended = (actions) => {
-              const usedPositions = actions.map((action) => action[0]);
+              const usedPositions = actions.map(
+                (actionGroup) => actionGroup[0][0]
+              );
               return ["1", "2", "3", "4", "5"].filter(
                 (pos) => !usedPositions.includes(pos)
               );
@@ -996,6 +1037,58 @@
               handleDragEnd();
             };
 
+            const addRestart = async (roundNum) => {
+              try {
+                const restartType = selectedRestart.value[roundNum];
+                if (!restartType) {
+                  ElementPlus.ElMessage.warning("请选择重开类型");
+                  return;
+                }
+
+                const currentActions = Array.isArray(allActions.value[roundNum])
+                  ? [...allActions.value[roundNum]]
+                  : [];
+
+                // 获取最后一个动作数组
+                if (currentActions.length === 0) {
+                  ElementPlus.ElMessage.warning("请先添加动作再设置重开");
+                  return;
+                }
+
+                // 保持扩展状态和第一行动作数量
+                const isExtendedState =
+                  allActions.value[roundNum]?.isExtended || false;
+                const firstLineActionsCount =
+                  allActions.value[roundNum]?.firstLineActions ||
+                  currentActions.length;
+
+                const lastAction = currentActions[currentActions.length - 1];
+                // 添加重开标记
+                lastAction.push(
+                  `重:${restartType === "全灭重开" ? "全灭" : "左上角"}`
+                );
+
+                await axios.put(
+                  `${API_BASE_URL}/actions/${roundNum}`,
+                  currentActions
+                );
+
+                // 更新动作数组，同时保持扩展状态
+                allActions.value[roundNum] = currentActions;
+                allActions.value[roundNum].isExtended = isExtendedState;
+                allActions.value[roundNum].firstLineActions =
+                  firstLineActionsCount;
+
+                // 重置选择
+                selectedRestart.value[roundNum] = "";
+
+                ElementPlus.ElMessage.success("添加重开成功");
+              } catch (error) {
+                console.error("添加重开失败:", error);
+                ElementPlus.ElMessage.error("添加重开失败");
+              }
+            };
+
             onMounted(() => {
               loadAllActions();
             });
@@ -1034,6 +1127,8 @@
               handleDragEnd,
               handleDragOver,
               handleDrop,
+              selectedRestart,
+              addRestart,
             };
           },
         });
