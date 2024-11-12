@@ -12,4 +12,4 @@ for dir_name in ['build', 'dist']:
 # 运行 PyInstaller
 print('开始构建...')
 subprocess.run(['pyinstaller', 'build.spec'], check=True)
-print('构建完成！') 
+print('构建完成！')
