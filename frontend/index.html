@@ -543,51 +543,42 @@
               }
             };
 
-            const addAction = async (roundNum, isExtended = false) => {
-              const position = isExtended
-                ? selectedPositionsExtended.value[roundNum]
-                : selectedPositions.value[roundNum];
-              const action = isExtended
-                ? selectedActionsExtended.value[roundNum]
-                : selectedActions.value[roundNum];
-
-              if (!position || !action) {
-                ElementPlus.ElMessage.warning("请选择位置和动作");
-                return;
-              }
-
-              const newAction = `${position}${action}`;
-
-              // 确保是数组
-              if (!Array.isArray(allActions.value[roundNum])) {
-                allActions.value[roundNum] = [];
-                allActions.value[roundNum].firstLineActions = 0;
-              }
-
-              const round = allActions.value[roundNum];
-
-              if (isExtended) {
-                // 第二行的动作添加到末尾
-                round.push(newAction);
-              } else {
-                // 如果添加后会超过5个动作，自动转为扩展模式
-                if (!round.isExtended && round.length >= 5) {
-                  round.isExtended = true;
-                  round.firstLineActions = 4;
-                  round.push(newAction); // 新动作添加到第��行
-                } else {
-                  // 正常添加到第一行
-                  round.splice(round.firstLineActions, 0, newAction);
-                  round.firstLineActions++;
-                }
-              }
-
+            const addAction = async (roundNum, isExtended) => {
               try {
-                await axios.put(
-                  `http://127.0.0.1:5000/api/actions/${roundNum}`,
-                  round
-                );
-                // 清空选择
+                const position = isExtended 
+                  ? selectedPositionsExtended.value[roundNum] 
+                  : selectedPositions.value[roundNum];
+                const action = isExtended 
+                  ? selectedActionsExtended.value[roundNum] 
+                  : selectedActions.value[roundNum];
+
+                if (!position || !action) {
+                  ElementPlus.ElMessage.warning("请选择位置和动作");
+                  return;
+                }
+
+                const currentActions = Array.isArray(allActions.value[roundNum])
+                  ? [...allActions.value[roundNum]]
+                  : [];
+
+                // 创建新动作
+                const newAction = `${position}${action}`;
+                
+                // 在数组末尾添加新动作
+                currentActions.push(newAction);
+
+                // 保持扩展状态和第一行动作数量
+                if (currentActions.isExtended) {
+                  currentActions.isExtended = true;
+                  currentActions.firstLineActions = isExtended 
+                    ? currentActions.firstLineActions 
+                    : currentActions.length;
+                }
+
+                await axios.put(`${API_BASE_URL}/actions/${roundNum}`, currentActions);
+                allActions.value[roundNum] = currentActions;
+
+                // 重置选择
                 if (isExtended) {
                   selectedPositionsExtended.value[roundNum] = "";
                   selectedActionsExtended.value[roundNum] = "";
@@ -595,10 +586,11 @@
                   selectedPositions.value[roundNum] = "";
                   selectedActions.value[roundNum] = "";
                 }
-                ElementPlus.ElMessage.success("添加成功");
+
+                ElementPlus.ElMessage.success("添加动作成功");
               } catch (error) {
-                console.error("添加失败:", error);
-                ElementPlus.ElMessage.error("添加失败");
+                console.error("添加动作失败:", error);
+                ElementPlus.ElMessage.error("添加动作失败");
               }
             };
 
