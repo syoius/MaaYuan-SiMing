@@ -398,12 +398,14 @@
                     <el-select
                       v-model="levelType"
                       placeholder="关卡类别"
-                      style="width: 100px"
+                      style="width: 130px"
                       size="default"
                     >
                       <el-option label="主线" value="主线"></el-option>
                       <el-option label="洞窟" value="洞窟"></el-option>
+                      <el-option label="活动-有难度分级" value="活动有分级"></el-option>
                       <el-option label="其他" value="其他"></el-option>
+
                     </el-select>
                   </el-form-item>
 
@@ -412,6 +414,17 @@
                     <el-input
                       v-model="levelRecognitionName"
                       placeholder="关卡序号/名"
+                      style="width: 95px"
+                      size="default"
+                    >
+                    </el-input>
+                  </el-form-item>
+
+                  <!-- 添加难度输入框，仅在选择活动（有难度分级）时显示 -->
+                  <el-form-item v-if="levelType === '活动有分级'" style="margin-bottom: 0">
+                    <el-input
+                      v-model="difficulty"
+                      placeholder="关卡难度"
                       style="width: 95px"
                       size="default"
                     >
@@ -556,6 +569,7 @@
             const levelRecognitionName = ref(
               localStorage.getItem("levelRecognitionName") || ""
             ); // 添加关卡名称（识别用）响应式变量
+            const difficulty = ref(localStorage.getItem('difficulty') || '');
 
             const tableData = computed(() => {
               return Object.keys(allActions.value)
@@ -895,6 +909,10 @@
                   ElementPlus.ElMessage.warning("请输入关卡名称（识别用）");
                   return;
                 }
+                if (levelType.value === '活动有分级' && !difficulty.value.trim()) {
+                  ElementPlus.ElMessage.warning("请输入关卡难度");
+                  return;
+                }
 
                 exporting.value = true;
                 const response = await axios.get(`${API_BASE_URL}/export`, {
@@ -902,6 +920,7 @@
                     level_name: levelName.value,
                     level_type: levelType.value,
                     level_recognition_name: levelRecognitionName.value,
+                    difficulty: difficulty.value,
                   },
                 });
 
@@ -1013,6 +1032,7 @@
                       levelType.value = response.data.config_info.level_type;
                       levelRecognitionName.value =
                         response.data.config_info.level_recognition_name;
+                      difficulty.value = response.data.config_info.difficulty;
                     }
 
                     ElementPlus.ElMessage.success("导入成功");
@@ -1240,6 +1260,10 @@
               localStorage.setItem("levelName", newValue);
             });
 
+            watch(difficulty, (newValue) => {
+              localStorage.setItem('difficulty', newValue);
+            });
+
             onMounted(() => {
               loadAllActions();
             });
@@ -1282,6 +1306,7 @@
               addRestart,
               levelType,
               levelRecognitionName,
+              difficulty,
             };
           },
         });

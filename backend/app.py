@@ -170,8 +170,9 @@ def export_config():
     """导出生成的配置文件"""
     try:
         level_name = request.args.get('level_name', 'generated_config')
-        level_type = request.args.get('level_type', '')  # 获取关卡类别
-        level_recognition_name = request.args.get('level_recognition_name', '')  # 获取识别用名称
+        level_type = request.args.get('level_type', '')
+        level_recognition_name = request.args.get('level_recognition_name', '')
+        difficulty = request.args.get('difficulty', '')  # 获取难度参数
 
         if getattr(sys, 'frozen', False):
             # 打包环境
@@ -193,12 +194,13 @@ def export_config():
 
         if getattr(sys, 'frozen', False):
             # 打包环境的处理逻辑
-            fight_g.generate_config(temp_config_path, config_path, level_type, level_recognition_name)
+            fight_g.generate_config(temp_config_path, config_path, level_type, level_recognition_name, difficulty)
         else:
             # 开发环境下运行脚本
             python_executable = sys.executable
             result = subprocess.run(
-                [python_executable, script_path, temp_config_path, config_path, level_type, level_recognition_name],
+                [python_executable, script_path, temp_config_path, config_path, 
+                 level_type, level_recognition_name, difficulty],  # 添加难度参数
                 capture_output=True,
                 text=True,
                 cwd=os.path.dirname(script_path)
@@ -279,10 +281,21 @@ def import_actions():
             config_data = json.load(f)
 
         # 导入配置
-        import fight_g
+        if getattr(sys, 'frozen', False):
+            # 打包环境
+            from backend import fight_g
+        else:
+            # 开发环境
+            import fight_g
+
         result = fight_g.reverse_config(config_data)
         round_actions = result['actions']
         config_info = result['config_info']
+
+        # 添加调试输出
+        print("Config data:", config_data)
+        print("Reverse config result:", result)
+        print("Config info:", config_info)
 
         # 保存导入的配置
         save_actions(round_actions)
