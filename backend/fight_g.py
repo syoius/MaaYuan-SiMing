@@ -8,7 +8,7 @@ def get_data_dir():
         base_dir = os.path.dirname(sys.executable)
     else:
         base_dir = os.path.dirname(os.path.abspath(__file__))
-    
+
     data_dir = os.path.join(base_dir, 'data')
     os.makedirs(data_dir, exist_ok=True)
     return data_dir
@@ -137,21 +137,21 @@ def generate_config(input_path, output_path):
 def reverse_config(config_data):
     """从生成的配置文件反向生成回合动作配置"""
     round_actions = {}
-    
+
     # 首先按回合号分组处理所有动作
     for key, value in config_data.items():
         # 跳过检测回合配置
         if not key.startswith('回合') or '检测' in key:
             continue
-        
+
         # 从键名中提取回合号
         # 例如: "回合1行动1" -> round_num = "1"
         round_num = key.split('回合')[1].split('行动')[0]
-        
+
         # 初始化该回合的动作列表
         if round_num not in round_actions:
             round_actions[round_num] = []
-        
+
         # 解析普通动作
         action_code = None
         if value.get('action') == 'Click':
@@ -169,7 +169,7 @@ def reverse_config(config_data):
             else:
                 position = '5'
             action_code = f"{position}普"
-            
+
         elif value.get('action') == 'Swipe':
             # 从起点坐标判断位置号
             begin = value.get('begin', [0, 0, 0, 0])
@@ -185,7 +185,7 @@ def reverse_config(config_data):
                 position = '4'
             else:
                 position = '5'
-            
+
             # 通过终点y坐标判断是上拉还是下拉
             if end[1] < begin[1]:
                 action_code = f"{position}上"
@@ -194,23 +194,23 @@ def reverse_config(config_data):
 
         if action_code:
             action_group = [action_code]
-            
+
             # 检查是否有重开配置
             if value.get('next'):
                 if "抄作业全灭重开" in value['next']:
                     action_group.append("重:全灭")
                 elif "抄作业点左上角重开" in value['next']:
                     action_group.append("重:左上角")
-            
+
             round_actions[round_num].append(action_group)
-    
+
     return round_actions
 
 if __name__ == '__main__':
     if len(sys.argv) != 3:
         print("Usage: python fight_g.py input_path output_path")
         sys.exit(1)
-    
+
     input_path = sys.argv[1]
     output_path = sys.argv[2]
     generate_config(input_path, output_path)

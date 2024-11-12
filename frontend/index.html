@@ -147,11 +147,11 @@
                         closable
                         draggable="true"
                         class="draggable"
-                        :class="{ 
-                                                'dragging': draggedAction === action && 
-                                                           dragSourceRound === row.roundNum && 
-                                                           !dragSourceIsExtended 
-                                            }"
+                        :class="{
+                          'dragging': draggedAction === action &&
+                          dragSourceRound === row.roundNum &&
+                          !dragSourceIsExtended
+                        }"
                         @close="removeAction(row.roundNum, index)"
                         @dragstart="handleDragStart($event, row.roundNum, index, action, false)"
                         @dragend="handleDragEnd"
@@ -271,11 +271,11 @@
                       closable
                       draggable="true"
                       class="draggable"
-                      :class="{ 
-                                            'dragging': draggedAction === action && 
-                                                       dragSourceRound === row.roundNum && 
-                                                       dragSourceIsExtended 
-                                        }"
+                      :class="{
+                        'dragging': draggedAction === action &&
+                        dragSourceRound === row.roundNum &&
+                        dragSourceIsExtended
+                      }"
                       @close="removeAction(row.roundNum, index + row.firstLineActions)"
                       @dragstart="handleDragStart($event, row.roundNum, index + row.firstLineActions, action, true)"
                       @dragend="handleDragEnd"
@@ -978,8 +978,13 @@
 
               const sourceIndex = dragSourceIndex.value;
               const actions = [...allActions.value[targetRound]];
-              const isExtendedState = actions.isExtended;
-              const firstLineActionsCount = actions.firstLineActions;
+
+              // 保存当前的扩展状态和第一行动作数量
+              const isExtendedState =
+                allActions.value[targetRound]?.isExtended || false;
+              const firstLineActionsCount =
+                allActions.value[targetRound]?.firstLineActions ||
+                actions.length;
 
               if (!isExtended) {
                 // 在第一行内移动
@@ -1027,7 +1032,13 @@
                   `${API_BASE_URL}/actions/${targetRound}`,
                   actions
                 );
+
+                // 更新动作数组时保持扩展状态
                 allActions.value[targetRound] = actions;
+                allActions.value[targetRound].isExtended = isExtendedState;
+                allActions.value[targetRound].firstLineActions =
+                  firstLineActionsCount;
+
                 ElementPlus.ElMessage.success("动作顺序已更新");
               } catch (error) {
                 console.error("更新失败:", error);
