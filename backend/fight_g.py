@@ -41,7 +41,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
         def get_action(action_code):
             position = action_code[0]  # 获取位置编号，例如 "1"
             action_type = action_code[1]  # 获取动作类型，例如 "普"
-            key = f"{position}号位" + ("普攻" if action_type == "普" else "上拉" if action_type == "上" else "下拉")
+            key = f"{position}号位" + ("普攻" if action_type == "普" else "上拉" if action_type == "大" else "下拉")
             return action_templates.get(key)
 
         # 生成 JSON 配置
@@ -56,37 +56,69 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                 "post_delay": 1000,
             }
 
-        # 设置每个回合中的行动
-        for i, action_group in enumerate(actions, start=1):
-                action = action_group[0]  # 第一个元素是动作
-                action_config = get_action(action)
-                if action_config:
-                    action_key = f"回合{round_num}行动{i}"
-                    result_config[action_key] = action_config.copy()
-
-                    # 检查是否有重开设置
-                    restart_type = None
-                    if len(action_group) > 1 and action_group[1].startswith("重:"):
-                        restart_type = action_group[1].split(":")[1]
-
-                    # 设置next
-                    if int(round_num) == max_round_num and i == len(actions):
-                        result_config[action_key]["next"] = []
-                        if restart_type:
-                            restart_node = f"抄作业{restart_type}重开" if restart_type == "全灭" else f"抄作业点左上角重开"
-                            result_config[action_key]["next"].append(restart_node)
+            # 处理每个回合中的动作
+            current_action_key = None
+            for i, action_group in enumerate(actions, start=1):
+                # 检查是否是额外操作
+                if isinstance(action_group, list) and len(action_group) > 0:
+                    action = action_group[0]  # 第一个元素是动作
+                    
+                    if action.startswith('额外:'):
+                        extra_action_type = action.split(':')[1]
+                        extra_action_key = f"回合{round_num}额外{i}"
+                        
+                        # 配置额外操作
+                        if extra_action_type == "左侧目标":
+                            result_config[extra_action_key] = {
+                                "recognition": "TemplateMatch",
+                                "template": "target_switch_left.png",
+                                "roi": [0, 0, 720, 1280],
+                                "action": "Click",
+                                "post_delay": 1000
+                            }
+                        elif extra_action_type == "右侧目标":
+                            result_config[extra_action_key] = {
+                                "recognition": "TemplateMatch",
+                                "template": "target_switch_right.png",
+                                "roi": [0, 0, 720, 1280],
+                                "action": "Click",
+                                "post_delay": 1000
+                            }
+                        elif extra_action_type == "判断数字":
+                            result_config[extra_action_key] = {
+                                "recognition": "TemplateMatch",
+                                "template": "target_switch_nearest.png",
+                                "roi": [0, 0, 720, 1280],
+                                "action": "Click",
+                                "post_delay": 1000
+                            }
+                        
+                        # 设置前一个动作的next为当前额外操作
+                        if current_action_key:
+                            result_config[current_action_key]["next"] = [extra_action_key]
+                        
+                        current_action_key = extra_action_key
+                    elif action.startswith('重开:'):
+                        # 处理重开操作
+                        restart_type = action.split(':')[1]
+                        restart_node = f"抄作业{restart_type}重开" if restart_type == "全灭" else f"抄作业点左上角重开"
+                        if current_action_key:
+                            result_config[current_action_key]["next"] = [restart_node]
+                            if i < len(actions):
+                                result_config[current_action_key]["next"].append(f"回合{round_num}行动{i + 1}")
+                            elif int(round_num) < max_round_num:
+                                result_config[current_action_key]["next"].append(f"检测回合{int(round_num)+1}")
                     else:
-                        next_action = f"回合{round_num}行动{i + 1}" if i < len(actions) else f"检测回合{int(round_num)+1}"
-                        result_config[action_key]["next"] = []
-                        if restart_type:
-                            restart_node = f"抄作业{restart_type}重开" if restart_type == "全灭" else f"抄作业点左上角重开"
-                            result_config[action_key]["next"].append(restart_node)
-                        result_config[action_key]["next"].append(next_action)
-
-                    # 设置错误处理
-                    if i == 9:
-                        result_config[action_key]["on_error"] = [f"检测回合{round_num}"]
-
+                        # 处理普通动作
+                        action_config = get_action(action)
+                        if action_config:
+                            action_key = f"回合{round_num}行动{i}"
+                            result_config[action_key] = action_config.copy()
+                            
+                            if current_action_key:
+                                result_config[current_action_key]["next"] = [action_key]
+                            
+                            current_action_key = action_key
 
         # 根据关卡类别设置重开后的导航节点
         if level_type == '主线':
@@ -250,7 +282,7 @@ def reverse_config(config_data):
     config_info = {
         'level_type': '',
         'level_recognition_name': '',
-        'difficulty': ''  # 添加难度字段
+        'difficulty': ''
     }
 
     # 检测关卡类型和识别名称
@@ -329,15 +361,14 @@ def reverse_config(config_data):
 
         if action_code:
             action_group = [action_code]
+            round_actions[round_num].append(action_group)
 
-            # 检查是否有重开配置
+            # 检查是否有重开配置，如果有则添加为单独的动作组
             if value.get('next'):
                 if "抄作业全灭重开" in value['next']:
-                    action_group.append("重:全灭")
+                    round_actions[round_num].append(["重开:全灭"])
                 elif "抄作业点左上角重开" in value['next']:
-                    action_group.append("重:左上角")
-
-            round_actions[round_num].append(action_group)
+                    round_actions[round_num].append(["重开:左上角"])
 
     return {
         'actions': round_actions,
