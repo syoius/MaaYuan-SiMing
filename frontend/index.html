@@ -30,8 +30,9 @@
       }
 
       .el-tag {
-        margin-right: 8px;
+        margin-right: 4px;
         margin-bottom: 8px;
+        line-height: 20px;
       }
 
       .el-form--inline .el-form-item {
@@ -82,6 +83,14 @@
         transform: scale(1.05);
         transition: transform 0.2s;
       }
+
+      /* 添加容器样式来控制多行显示的间距 */
+      .actions-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;           
+        padding: 4px 0;     /* 上下添加一些内边距 */
+      }
     </style>
   </head>
   <body>
@@ -126,9 +135,9 @@
                 <!-- 第一行动作和控件 -->
                 <div style="display: flex; align-items: center; justify-content: space-between; width: 100%">
                   <!-- 左侧：动作标签和添加动作控件 -->
-                  <div style="display: flex; align-items: center;">
+                  <div style="display: flex; align-items: center; gap:8px">
                     <!-- 第一行动作显示 -->
-                    <div style="display: flex; align-items: center; flex-wrap: wrap">
+                    <div class="actions-container" style="display: flex; align-items: center; flex-wrap: wrap">
                       <el-tag
                         v-for="(action, index) in row.actions.slice(0, row.firstLineActions)"
                         :key="index"
@@ -145,15 +154,14 @@
                         @dragend="handleDragEnd"
                         @dragover.prevent="handleDragOver($event, row.roundNum, index, false)"
                         @drop="handleDrop($event, row.roundNum, index, false)"
-                        style="margin: 0 10px 0 0"
+                        style="margin: 0 4px 0 0"
                       >
                         {{ action[0] }}
                       </el-tag>
                     </div>
 
                     <!-- 第一行的添加动作控件 -->
-                    <div v-if="(row.isExtended && getFirstLineActionCount(row.actions.slice(0, row.firstLineActions)) < 4) || 
-                               (!row.isExtended && getFirstLineActionCount(row.actions.slice(0, row.firstLineActions)) < 5)">
+                    <div v-if="getFirstLineActionCount(row.actions.slice(0, row.firstLineActions)) < (row.isExtended ? 4 : 5)">
                       <el-form :inline="true" style="margin: 0">
                         <el-form-item style="margin: 0 10px 0 0">
                           <el-select
@@ -161,6 +169,16 @@
                             placeholder="位置"
                             size="small"
                             style="width: 60px"
+                            :popper-options="{
+                              modifiers: [
+                                {
+                                  name: 'preventOverflow',
+                                  options: {
+                                    padding: 0
+                                  }
+                                }
+                              ]
+                            }"
                           >
                             <el-option
                               v-for="pos in getAvailablePositions(row.actions.slice(0, row.firstLineActions))"
@@ -247,7 +265,7 @@
                         <el-button
                           type="warning"
                           size="small"
-                          @click="addRestart(row.roundNum)"
+                          @click="addRestart(row.roundNum, false)"
                           :disabled="!selectedRestart[row.roundNum]"
                         >
                           ＋重开
@@ -274,8 +292,8 @@
                   style="display: flex; align-items: center; justify-content: space-between; width: calc(100% - 20px); margin-left: 20px"
                 >
                   <!-- 左侧：动作标签和添加动作控件 -->
-                  <div style="display: flex; align-items: center;">
-                    <div style="display: flex; align-items: center; flex-wrap: wrap">
+                  <div style="display: flex; align-items: center; gap:8px">
+                    <div class="actions-container" style="display: flex; align-items: center; flex-wrap: wrap">
                       <el-tag
                         v-for="(action, index) in row.actions.slice(row.firstLineActions)"
                         :key="index + row.firstLineActions"
@@ -292,7 +310,7 @@
                         @dragend="handleDragEnd"
                         @dragover.prevent="handleDragOver($event, row.roundNum, index + row.firstLineActions, true)"
                         @drop="handleDrop($event, row.roundNum, index + row.firstLineActions, true)"
-                        style="margin: 0 10px 0 0"
+                        style="margin: 0 4px 0 0"
                       >
                         {{ action[0] }}
                       </el-tag>
@@ -393,7 +411,7 @@
                         <el-button
                           type="warning"
                           size="small"
-                          @click="addRestart(row.roundNum)"
+                          @click="addRestart(row.roundNum, true)"
                           :disabled="!selectedRestartExtended[row.roundNum]"
                         >
                           ＋重开
@@ -652,28 +670,41 @@
                 .map((round) => {
                   const roundStr = round.toString();
                   const actions = Array.isArray(allActions.value[roundStr])
-                    ? allActions.value[roundStr]
+                    ? [...allActions.value[roundStr]]
                     : [];
+                  const isExtended = allActions.value[roundStr]?.isExtended || false;
+                  const firstLineActions = allActions.value[roundStr]?.firstLineActions || actions.length;
+                  const firstLineRegularActions = allActions.value[roundStr]?.firstLineRegularActions || 0;
                   return {
                     roundNum: roundStr,
                     actions: actions,
-                    isExtended: allActions.value[roundStr]?.isExtended || false,
-                    firstLineActions:
-                      allActions.value[roundStr]?.firstLineActions ||
-                      actions.length,
+                    isExtended: isExtended,
+                    firstLineActions: firstLineActions,
+                    firstLineRegularActions: firstLineRegularActions,
                   };
-                });
+              });
             });
 
-            const saveStateToLocalStorage = (
-              roundNum,
-              isExtended,
-              firstLineActions
-            ) => {
+            const getFirstLineRegularActionCount = (actions, firstLineActions) => {
+              return actions.slice(0, firstLineActions).filter(action =>
+                !action[0].startsWith('重开:') &&
+                !action[0].startsWith('额外:')
+              ).length;
+            };
+
+            const getExtendedLineRegularActionCount = (actions, firstLineActions) => {
+              return actions.slice(firstLineActions).filter(action =>
+                !action[0].startsWith('重开:') &&
+                !action[0].startsWith('额外:')
+              ).length;
+            };
+            
+            const saveStateToLocalStorage = (roundNum, isExtended, firstLineActions, firstLineRegularActions) => {
               const key = `round_${roundNum}_state`;
               const state = {
                 isExtended,
                 firstLineActions,
+                firstLineRegularActions,
               };
               localStorage.setItem(key, JSON.stringify(state));
             };
@@ -683,20 +714,23 @@
               const savedState = localStorage.getItem(key);
               if (savedState) {
                 const state = JSON.parse(savedState);
-                return state;
+                return {
+                  isExtended: state.isExtended || false,
+                  firstLineActions: state.firstLineActions || actionsLength,
+                  firstLineRegularActions: state.firstLineRegularActions || 0,
+                };
               }
               // 默认状态
               return {
-                isExtended: actionsLength > 5,
-                firstLineActions: actionsLength > 5 ? 4 : actionsLength,
+                isExtended: false,
+                firstLineActions: actionsLength,
+                firstLineRegularActions: 0,
               };
             };
 
             const loadAllActions = async () => {
               try {
-                const response = await axios.get(
-                  "http://127.0.0.1:5000/api/actions"
-                );
+                const response = await axios.get("http://127.0.0.1:5000/api/actions");
                 const actions = response.data;
 
                 // 确保每个回合的动作都是数组
@@ -715,6 +749,7 @@
                   actions[roundNum] = currentActions;
                   actions[roundNum].isExtended = state.isExtended;
                   actions[roundNum].firstLineActions = state.firstLineActions;
+                  actions[roundNum].firstLineRegularActions = state.firstLineRegularActions;
                 });
 
                 allActions.value = actions;
@@ -725,6 +760,7 @@
 
             const addAction = async (roundNum, isExtended) => {
               try {
+                // 根据是否为扩展行选择对应的值
                 const position = isExtended
                   ? selectedPositionsExtended.value[roundNum]
                   : selectedPositions.value[roundNum];
@@ -741,54 +777,53 @@
                   ? [...allActions.value[roundNum]]
                   : [];
 
-                // 保持扩展状态
-                const isExtendedState =
-                  allActions.value[roundNum]?.isExtended || false;
+                // 获取当前状态
+                const currentState = loadStateFromLocalStorage(roundNum, currentActions.length);
 
-                // 更新 firstLineActions 的计算
-                let firstLineActionsCount;
-                if (isExtended) {
-                  // 如果是在扩展行添加，保持原有的 firstLineActions
-                  firstLineActionsCount =
-                    allActions.value[roundNum]?.firstLineActions || 4;
-                } else {
-                  // 如果是在第一行添加，增加 firstLineActions
-                  firstLineActionsCount =
-                    (allActions.value[roundNum]?.firstLineActions || 0) + 1;
+                const isRegularAction = true; 
+
+                if (!isExtended) {
+                  let firstLineRegularActions = currentState.firstLineRegularActions || 0;
+
+                  if (currentState.isExtended && firstLineRegularActions >= 4) {
+                    ElementPlus.ElMessage.warning("扩展栏激活时第一行最多只能有4个常规动作");
+                    return;
+                  }
+
+                  firstLineRegularActions += 1;
+                  currentState.firstLineRegularActions = firstLineRegularActions;
                 }
 
-                // 创建新动作数组
                 const newAction = [`${position}${action}`];
 
-                if (isExtended) {
-                  // 在扩展行添加到末尾
-                  currentActions.push(newAction);
-                } else {
-                  // 在第一行添加到 firstLineActions 的位置
-                  currentActions.splice(
-                    firstLineActionsCount - 1,
-                    0,
-                    newAction
-                  );
+                // 根据是否为扩展行决定插入位置
+                const insertIndex = isExtended 
+                  ? currentActions.length  // 扩展行则添加到末尾
+                  : (currentState.firstLineActions || 0);  // 第一行则添加到第一行末尾
+
+                // 在正确位置插入新动作
+                currentActions.splice(insertIndex, 0, newAction);
+                    
+                // 更新第一行动作计数
+                if (!isExtended) {
+                  currentState.firstLineActions = (currentState.firstLineActions || 0) + 1;
                 }
-                // 更新动作数组，同时保持扩展状态
-    
-                await axios.put(
-                  `${API_BASE_URL}/actions/${roundNum}`,
-                  currentActions
-                );
+                
+                // 更新后端
+                await axios.put(`${API_BASE_URL}/actions/${roundNum}`, currentActions);
 
+                // 更新前端状态
                 allActions.value[roundNum] = currentActions;
-                allActions.value[roundNum].isExtended = isExtendedState;
-                allActions.value[roundNum].firstLineActions = isExtended 
-                  ? firstLineActionsCount  // 如果是扩展行，保持原有的 firstLineActions
-                  : firstLineActionsCount + 1;  // 如果是第一行，增加 firstLineActions
+                allActions.value[roundNum].isExtended = currentState.isExtended || false;
+                allActions.value[roundNum].firstLineActions = currentState.firstLineActions;
+                allActions.value[roundNum].firstLineRegularActions = currentState.firstLineRegularActions;
 
-                // 保存状态到 localStorage
+                // 保存新状态到localStorage
                 saveStateToLocalStorage(
                   roundNum,
-                  isExtendedState,
-                  firstLineActionsCount
+                  currentState.isExtended,
+                  currentState.firstLineActions,
+                  currentState.firstLineRegularActions
                 );
 
                 // 重置选择
@@ -807,29 +842,52 @@
               }
             };
 
+
             const removeAction = async (roundNum, index) => {
               const round = allActions.value[roundNum];
               if (!round) return;
 
-              // 判断删除的是第一行还是第二行的动作
-              const isFirstLine = index < round.firstLineActions;
+              const firstLineActions = round.firstLineActions || round.length;
+              const isFirstLine = index < firstLineActions;
 
-              round.splice(index, 1);
+              const currentState = loadStateFromLocalStorage(
+                roundNum,
+                round.length
+              );
+
+              let firstLineRegularActions = currentState.firstLineRegularActions || 0;
+
+              const actionToRemove = round[index][0];
+              const isRegularAction = !actionToRemove.startsWith('重开:') && !actionToRemove.startsWith('额外:');
+
+              // 创建新的动作数组
+              const newActions = [...round];
+              newActions.splice(index, 1);
+
+              // 只在删除第一行动作时更新 firstLineActions
               if (isFirstLine) {
-                round.firstLineActions--;
-                // 保存更新后的状态
+                currentState.firstLineActions -= 1;
+                if (isRegularAction) {
+                  firstLineRegularActions -= 1;
+                }
+              }
+  
+              try {
+                await axios.put(`${API_BASE_URL}/actions/${roundNum}`, newActions);
+
+                // 更新状态时保持扩展状态
+                allActions.value[roundNum] = newActions;
+                allActions.value[roundNum].isExtended = currentState.isExtended;
+                allActions.value[roundNum].firstLineActions = currentState.firstLineActions;
+                
+                // 更新状态
                 saveStateToLocalStorage(
                   roundNum,
-                  round.isExtended,
-                  round.firstLineActions
+                  currentState.isExtended,
+                  currentState.firstLineActions,
+                  firstLineRegularActions
                 );
-              }
 
-              try {
-                await axios.put(
-                  `http://127.0.0.1:5000/api/actions/${roundNum}`,
-                  round
-                );
                 ElementPlus.ElMessage.success("删除成功");
               } catch (error) {
                 console.error("删除失败:", error);
@@ -859,7 +917,7 @@
                 await axios.post(
                   `http://127.0.0.1:5000/api/actions/add/${nextRound}`
                 );
-                ElementPlus.ElMessage.success("新增回功");
+                ElementPlus.ElMessage.success("新增回合");
               } catch (error) {
                 console.error("新增回合失败:", error);
                 ElementPlus.ElMessage.error("新增回合失败");
@@ -1026,7 +1084,7 @@
                   path: lastExportPath.value,
                 });
               } catch (error) {
-                console.error("打开件夹失败:", error);
+                console.error("打开文件夹失败:", error);
                 ElementPlus.ElMessage.error("打开文件夹失败");
               }
             };
@@ -1130,13 +1188,30 @@
                 const currentActions = Array.isArray(allActions.value[roundNum])
                   ? [...allActions.value[roundNum]]
                   : [];
+                
+                // 加载当前状态
+                const currentState = loadStateFromLocalStorage(
+                  roundNum,
+                  currentActions.length
+                );
 
-                // 保持动作数组的结构，但添加额外的属性
+                // 设置扩展状态
+                currentState.isExtended = true;
+                // 如果未设置，则设置firstLineActions为当前第一行动作数量
+                currentState.firstLineActions = currentState.firstLineActions || currentActions.length;
+
+                // 保存更新后的状态
+                saveStateToLocalStorage(
+                  roundNum,
+                  currentState.isExtended,
+                  currentState.firstLineActions,
+                  currentState.firstLineRegularActions
+                );
+
+                // 更新动作数组
                 allActions.value[roundNum] = currentActions;
-                // 添加扩展属性
-                allActions.value[roundNum].isExtended = true;
-                allActions.value[roundNum].firstLineActions =
-                  currentActions.length;
+                allActions.value[roundNum].isExtended = currentState.isExtended;
+                allActions.value[roundNum].firstLineActions = currentState.firstLineActions;
 
                 // 重置第二行的选择
                 selectedPositionsExtended.value[roundNum] = "";
@@ -1253,7 +1328,7 @@
               handleDragEnd();
             };
 
-            const addRestart = async (roundNum) => {
+            const addRestart = async (roundNum, isExtended) => {
               try {
                 // 根据是否为扩展行选择对应的重开类型
                 const restartType = selectedRestartExtended.value[roundNum] || selectedRestart.value[roundNum];
@@ -1272,17 +1347,22 @@
                   return;
                 }
 
+                // 获取当前状态
+                const currentState = loadStateFromLocalStorage(roundNum, currentActions.length);
+
                 // 创建新的重开动作
                 const newAction = [`重开:${restartType === "全灭重开" ? "全灭" : "左上角"}`];
                 
-                // 根据是否为扩展行，选择添加位置
-                const isExtended = !!selectedRestartExtended.value[roundNum];
-                const firstLineActionsCount = allActions.value[roundNum]?.firstLineActions || currentActions.length;
-                
-                if (isExtended) {
-                  currentActions.push(newAction);
-                } else {
-                  currentActions.splice(firstLineActionsCount, 0, newAction);
+                // 根据是否为扩展行决定插入位置
+                const insertIndex = isExtended 
+                  ? currentActions.length  // 扩展行则添加到末尾
+                  : (currentState.firstLineActions || 0);  // 第一行则添加到第一行末尾
+
+                currentActions.splice(insertIndex, 0, newAction);
+
+                // 更新第一行动作计数
+                if (!isExtended) {
+                  currentState.firstLineActions = (currentState.firstLineActions || 0) + 1;
                 }
 
                 // 直接更新动作数组
@@ -1290,10 +1370,15 @@
 
                 // 更新本地状态
                 allActions.value[roundNum] = currentActions;
-                allActions.value[roundNum].isExtended = allActions.value[roundNum]?.isExtended || false;
-                allActions.value[roundNum].firstLineActions = isExtended 
-                  ? firstLineActionsCount 
-                  : firstLineActionsCount + 1;
+                allActions.value[roundNum].isExtended = currentState.isExtended || false;
+                allActions.value[roundNum].firstLineActions = currentState.firstLineActions;
+
+                saveStateToLocalStorage(
+                  roundNum,
+                  currentState.isExtended,
+                  currentState.firstLineActions,
+                  currentState.firstLineRegularActions || 0
+                ); 
 
                 // 重置选择
                 if (isExtended) {
@@ -1325,29 +1410,35 @@
                   : [];
 
                 // 保持扩展状态
-                const isExtendedState = allActions.value[roundNum]?.isExtended || false;
-                const firstLineActionsCount = allActions.value[roundNum]?.firstLineActions || currentActions.length;
+                const currentState = loadStateFromLocalStorage(roundNum, currentActions.length);
 
                 // 创建新的额外操作
                 const newAction = [`额外:${extraAction}`];
 
-                if (isExtended) {
-                  // 如果是扩展行，添加到末尾
-                  currentActions.push(newAction);
-                } else {
-                  // 如果是第一行，添加到第一行末尾
-                  currentActions.splice(firstLineActionsCount, 0, newAction);
-                  // 增加第一行动作计数
-                  allActions.value[roundNum].firstLineActions = firstLineActionsCount + 1;
+                // 根据是否为扩展行决定插入位置
+                const insertIndex = isExtended 
+                  ? currentActions.length  // 扩展行则添加到末尾
+                  : (currentState.firstLineActions || 0);  // 第一行则添加到第一行末尾
+
+                currentActions.splice(insertIndex, 0, newAction);
+
+                // 更新第一行动作计数
+                if (!isExtended) {
+                  currentState.firstLineActions = (currentState.firstLineActions || 0) + 1;
                 }
 
                 await axios.put(`${API_BASE_URL}/actions/${roundNum}`, currentActions);
 
                 allActions.value[roundNum] = currentActions;
-                allActions.value[roundNum].isExtended = isExtendedState;
-                allActions.value[roundNum].firstLineActions = isExtended 
-                  ? firstLineActionsCount 
-                  : firstLineActionsCount + 1;
+                allActions.value[roundNum].isExtended = currentState.isExtended || false;
+                allActions.value[roundNum].firstLineActions = currentState.firstLineActions;
+
+                saveStateToLocalStorage(
+                  roundNum,
+                  currentState.isExtended,
+                  currentState.firstLineActions,
+                  currentState.firstLineRegularActions || 0
+                );
 
                 // 重置选择
                 if (isExtended) {
@@ -1386,7 +1477,8 @@
             const getFirstLineActionCount = (actions) => {
               return actions.filter(action => 
                 !action[0].startsWith('重开:') && 
-                !action[0].startsWith('额外:')
+                !action[0].startsWith('额外:') &&
+                !action[0].includes(':')
               ).length;
             };
 
