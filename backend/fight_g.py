@@ -70,28 +70,23 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                         # 配置额外操作
                         if extra_action_type == "左侧目标":
                             result_config[extra_action_key] = {
-                                "recognition": "TemplateMatch",
-                                "template": "target_switch_left.png",
-                                "roi": [0, 0, 720, 1280],
-                                "action": "Click",
-                                "post_delay": 1000
+                                "action": "Swipe",
+                                "begin": [207, 745, 1, 1],
+                                "end": [406, 745, 1, 1],
+                                "post_delay": 2000,
+                                "duration": 800
                             }
                         elif extra_action_type == "右侧目标":
                             result_config[extra_action_key] = {
-                                "recognition": "TemplateMatch",
-                                "template": "target_switch_right.png",
-                                "roi": [0, 0, 720, 1280],
-                                "action": "Click",
-                                "post_delay": 1000
+                                "action": "Swipe",
+                                "begin": [406, 745, 1, 1],
+                                "end": [207, 745, 1, 1],
+                                "post_delay": 2000,
+                                "duration": 800
                             }
-                        elif extra_action_type == "判断数字":
-                            result_config[extra_action_key] = {
-                                "recognition": "TemplateMatch",
-                                "template": "target_switch_nearest.png",
-                                "roi": [0, 0, 720, 1280],
-                                "action": "Click",
-                                "post_delay": 1000
-                            }
+                        # elif extra_action_type == "判断数字":
+                        #     result_config[extra_action_key] = {
+                        #     }
                         
                         # 设置前一个动作的next为当前额外操作
                         if current_action_key:
