@@ -91,6 +91,19 @@
         gap: 4px;           
         padding: 4px 0;     /* 上下添加一些内边距 */
       }
+
+      /* 添加拓展栏动作的样式 */
+      .el-tag.extended-action {
+        background-color: var(--el-color-success-light-9);
+        border-color: var(--el-color-success-light-7);
+        color: var(--el-color-success);
+      }
+
+      /* 保持拖拽时的样式一致 */
+      .el-tag.extended-action.dragging {
+        opacity: 0.5;
+        background-color: var(--el-color-success-light-9);
+      }
     </style>
   </head>
   <body>
@@ -227,12 +240,12 @@
                         >
                           <el-option label="切换至左侧目标" value="左侧目标"></el-option>
                           <el-option label="切换至右侧目标" value="右侧目标"></el-option>
-                          <el-option label="识别暴击/翻倍" value="判断数字"></el-option>
+                          <el-option label="识别暴击/翻倍（未实装）" value="判断数字"></el-option>
                         </el-select>
                       </el-form-item>
                       <el-form-item style="margin: 0 20px 0 0">
                         <el-button
-                          type="success"
+                          type="warning"
                           size="small"
                           @click="addExtraAction(row.roundNum, false)"
                           :disabled="!selectedExtraActions[row.roundNum]"
@@ -263,7 +276,7 @@
                       </el-form-item>
                       <el-form-item style="margin: 0">
                         <el-button
-                          type="warning"
+                          type="danger"
                           size="small"
                           @click="addRestart(row.roundNum, false)"
                           :disabled="!selectedRestart[row.roundNum]"
@@ -299,7 +312,7 @@
                         :key="index + row.firstLineActions"
                         closable
                         draggable="true"
-                        class="draggable"
+                        class="draggable extended-action"
                         :class="{
                           'dragging': draggedAction === action &&
                           dragSourceRound === row.roundNum &&
@@ -349,11 +362,11 @@
                         </el-form-item>
                         <el-form-item style="margin: 0">
                           <el-button
-                            type="primary"
+                            type="success"
                             size="small"
                             @click="addAction(row.roundNum, true)"
                           >
-                            +动作
+                            +行动
                           </el-button>
                         </el-form-item>
                       </el-form>
@@ -378,7 +391,7 @@
                       </el-form-item>
                       <el-form-item style="margin: 0 20px 0 0">
                         <el-button
-                          type="success"
+                          type="warning"
                           size="small"
                           @click="addExtraAction(row.roundNum, true)"
                           :disabled="!selectedExtraActionsExtended[row.roundNum]"
@@ -409,7 +422,7 @@
                       </el-form-item>
                       <el-form-item style="margin: 0">
                         <el-button
-                          type="warning"
+                          type="danger"
                           size="small"
                           @click="addRestart(row.roundNum, true)"
                           :disabled="!selectedRestartExtended[row.roundNum]"
