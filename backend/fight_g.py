@@ -114,6 +114,10 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                                 result_config[current_action_key]["next"] = [action_key]
                             
                             current_action_key = action_key
+                            
+                            # 如果是当前回合的最后一个动作，设置next指向下一回合
+                            if i == len(actions) and int(round_num) < max_round_num:
+                                result_config[action_key]["next"] = [f"检测回合{int(round_num)+1}"]
 
         # 根据关卡类别设置重开后的导航节点
         if level_type == '主线':
@@ -300,70 +304,75 @@ def reverse_config(config_data):
             config_info['level_type'] = '其他'
             config_info['level_recognition_name'] = config_data.get("抄作业找到关卡-OCR", {}).get("expected", "")
 
+    # 创建一个临时字典来存储每个回合的动作
+    temp_actions = {}
+    
     # 首先按回合号分组处理所有动作
     for key, value in config_data.items():
-        # 跳过检测回合配置
+        # 跳过检测回合配置和其他非动作配置
         if not key.startswith('回合') or '检测' in key:
             continue
 
-        # 从键名中提取回合号
-        # 例如: "回合1行动1" -> round_num = "1"
-        round_num = key.split('回合')[1].split('行动')[0]
+        # 从键名中提取回合号和动作序号
+        parts = key.split('回合')[1].split('行动')
+        round_num = parts[0]  # 基础回合号（如 "2" 或 "2额外2"）
+        action_num = int(parts[1]) if len(parts) > 1 else 0
 
-        # 初始化该回合的动作列表
-        if round_num not in round_actions:
-            round_actions[round_num] = []
+        # 确保回合存在于临时字典中
+        if round_num not in temp_actions:
+            temp_actions[round_num] = []
 
-        # 解析普通动作
+        # 解析动作类型
         action_code = None
-        if value.get('action') == 'Click':
+        
+        # 检查是否是额外操作
+        if value.get('action') == 'Swipe':
+            begin = value.get('begin', [0, 0, 0, 0])
+            end = value.get('end', [0, 0, 0, 0])
+            
+            # 检查是否是目标切换操作
+            if begin[0] == 207 and end[0] == 406:  # 左侧目标
+                action_code = "额外:左侧目标"
+            elif begin[0] == 406 and end[0] == 207:  # 右侧目标
+                action_code = "额外:右侧目标"
+            else:
+                # 普通上下拉动作
+                x = begin[0]
+                position = '1' if x < 100 else '2' if x < 250 else '3' if x < 400 else '4' if x < 550 else '5'
+                action_code = f"{position}{'上' if end[1] < begin[1] else '下'}"
+        
+        elif value.get('action') == 'Click':
             # 从目标坐标判断位置号
             target = value.get('target', [0, 0, 0, 0])
             x = target[0]
-            if x < 100:
-                position = '1'
-            elif x < 250:
-                position = '2'
-            elif x < 400:
-                position = '3'
-            elif x < 550:
-                position = '4'
-            else:
-                position = '5'
+            position = '1' if x < 100 else '2' if x < 250 else '3' if x < 400 else '4' if x < 550 else '5'
             action_code = f"{position}普"
 
-        elif value.get('action') == 'Swipe':
-            # 从起点坐标判断位置号
-            begin = value.get('begin', [0, 0, 0, 0])
-            end = value.get('end', [0, 0, 0, 0])
-            x = begin[0]
-            if x < 100:
-                position = '1'
-            elif x < 250:
-                position = '2'
-            elif x < 400:
-                position = '3'
-            elif x < 550:
-                position = '4'
-            else:
-                position = '5'
-
-            # 通过终点y坐标判断是上拉还是下拉
-            if end[1] < begin[1]:
-                action_code = f"{position}上"
-            else:
-                action_code = f"{position}下"
-
+        # 检查下一个动作是否是重开
+        next_actions = value.get('next', [])
         if action_code:
-            action_group = [action_code]
-            round_actions[round_num].append(action_group)
+            # 将动作和序号一起存储
+            temp_actions[round_num].append((action_num, [action_code]))
 
-            # 检查是否有重开配置，如果有则添加为单独的动作组
-            if value.get('next'):
-                if "抄作业全灭重开" in value['next']:
-                    round_actions[round_num].append(["重开:全灭"])
-                elif "抄作业点左上角重开" in value['next']:
-                    round_actions[round_num].append(["重开:左上角"])
+            # 检查是否有重开配置
+            next_actions = value.get('next', [])
+            if next_actions:
+                if "抄作业全灭重开" in next_actions:
+                    temp_actions[round_num].append((action_num + 0.5, ["重开:全灭"]))
+                elif "抄作业点左上角重开" in next_actions:
+                    temp_actions[round_num].append((action_num + 0.5, ["重开:左上角"]))
+
+    # 处理临时动作列表，按序号排序并合并到最终结果
+    for round_num, actions in temp_actions.items():
+        # 提取基础回合号（去掉可能的"额外"标记）
+        base_round = round_num.split('额外')[0]
+        if base_round not in round_actions:
+            round_actions[base_round] = []
+        
+        # 按动作序号排序并添加到结果中
+        sorted_actions = sorted(actions, key=lambda x: x[0])
+        for _, action in sorted_actions:
+            round_actions[base_round].append(action)
 
     return {
         'actions': round_actions,
