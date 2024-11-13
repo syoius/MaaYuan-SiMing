@@ -65,7 +65,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                     
                     if action.startswith('额外:'):
                         extra_action_type = action.split(':')[1]
-                        extra_action_key = f"回合{round_num}额外{i}"
+                        extra_action_key = f"回合{round_num}行动{i}"
                         
                         # 配置额外操作
                         if extra_action_type == "左侧目标":
