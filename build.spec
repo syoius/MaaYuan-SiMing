@@ -13,6 +13,11 @@ a = Analysis(
     datas=[
         ('frontend/index.html', 'frontend'),
         ('frontend/static/icon.ico', 'frontend/static'),
+        ('frontend/assets/axios.min.js', 'frontend/assets'),
+        ('frontend/assets/index.css', 'frontend/assets'),
+        ('frontend/assets/index.full.min.js','frontend/assets'),
+        ('frontend/assets/index.iife.min.js','frontend/assets'),
+        ('frontend/assets/vue.global.prod.min.js', 'frontend/assets'),
         ('backend/templates/fight_action.json', 'backend/templates'),
         ('backend/fight_g.py', 'backend'),
         ('backend/data', 'backend/data'),

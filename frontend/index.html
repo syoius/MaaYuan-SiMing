@@ -5,12 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Maa鸢/司命 - 勘天刻命</title>
     <!-- Element Plus 的样式 -->
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/element-plus/2.3.8/index.css"
-    />
+    <link rel="stylesheet" href="/assets/index.css" />
     <!-- 添加 Element Plus 图标库 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/element-plus-icons-vue/2.1.0/index.iife.min.js"></script>
+    <script src="/assets/index.iife.min.js"></script>
     <style>
       input[type="number"] {
         -webkit-appearance: none;
@@ -88,8 +85,8 @@
       .actions-container {
         display: flex;
         flex-wrap: wrap;
-        gap: 4px;           
-        padding: 4px 0;     /* 上下添加一些内边距 */
+        gap: 4px;
+        padding: 4px 0; /* 上下添加一些内边距 */
       }
 
       /* 添加拓展栏动作的样式 */
@@ -146,11 +143,25 @@
             <template #default="{ row }">
               <div style="display: flex; flex-direction: column; gap: 8px">
                 <!-- 第一行动作和控件 -->
-                <div style="display: flex; align-items: center; justify-content: space-between; width: 100%">
+                <div
+                  style="
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    width: 100%;
+                  "
+                >
                   <!-- 左侧：动作标签和添加动作控件 -->
-                  <div style="display: flex; align-items: center; gap:8px">
+                  <div style="display: flex; align-items: center; gap: 8px">
                     <!-- 第一行动作显示 -->
-                    <div class="actions-container" style="display: flex; align-items: center; flex-wrap: wrap">
+                    <div
+                      class="actions-container"
+                      style="
+                        display: flex;
+                        align-items: center;
+                        flex-wrap: wrap;
+                      "
+                    >
                       <el-tag
                         v-for="(action, index) in row.actions.slice(0, row.firstLineActions)"
                         :key="index"
@@ -174,7 +185,9 @@
                     </div>
 
                     <!-- 第一行的添加动作控件 -->
-                    <div v-if="getFirstLineActionCount(row.actions.slice(0, row.firstLineActions)) < (row.isExtended ? 4 : 5)">
+                    <div
+                      v-if="getFirstLineActionCount(row.actions.slice(0, row.firstLineActions)) < (row.isExtended ? 4 : 5)"
+                    >
                       <el-form :inline="true" style="margin: 0">
                         <el-form-item style="margin: 0 10px 0 0">
                           <el-select
@@ -228,7 +241,14 @@
                   </div>
 
                   <!-- 右侧：额外操作、重开和附加回合按钮 -->
-                  <div style="display: flex; align-items: center; gap: 10px; margin-left: auto;">
+                  <div
+                    style="
+                      display: flex;
+                      align-items: center;
+                      gap: 10px;
+                      margin-left: auto;
+                    "
+                  >
                     <!-- 额外操作添加 -->
                     <el-form :inline="true" style="margin: 0">
                       <el-form-item style="margin: 0 10px 0 0">
@@ -238,12 +258,21 @@
                           size="small"
                           style="width: 120px"
                         >
-                          <el-option label="切换至左侧目标" value="左侧目标"></el-option>
-                          <el-option label="切换至右侧目标" value="右侧目标"></el-option>
-                          <el-option label="识别暴击/翻倍（未实装）" value="判断数字"></el-option>
+                          <el-option
+                            label="切换至左侧目标"
+                            value="左侧目标"
+                          ></el-option>
+                          <el-option
+                            label="切换至右侧目标"
+                            value="右侧目标"
+                          ></el-option>
+                          <el-option
+                            label="识别暴击/翻倍（未实装）"
+                            value="判断数字"
+                          ></el-option>
                         </el-select>
                       </el-form-item>
-                      <el-form-item style="margin: 0 20px 0 0">
+                      <el-form-item style="margin: 0 5px 0 0">
                         <el-button
                           type="warning"
                           size="small"
@@ -302,11 +331,24 @@
                 <!-- 第二行（扩展行）的布局 -->
                 <div
                   v-if="row.isExtended"
-                  style="display: flex; align-items: center; justify-content: space-between; width: calc(100% - 20px); margin-left: 20px"
+                  style="
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    width: calc(100% - 20px);
+                    margin-left: 20px;
+                  "
                 >
                   <!-- 左侧：动作标签和添加动作控件 -->
-                  <div style="display: flex; align-items: center; gap:8px">
-                    <div class="actions-container" style="display: flex; align-items: center; flex-wrap: wrap">
+                  <div style="display: flex; align-items: center; gap: 8px">
+                    <div
+                      class="actions-container"
+                      style="
+                        display: flex;
+                        align-items: center;
+                        flex-wrap: wrap;
+                      "
+                    >
                       <el-tag
                         v-for="(action, index) in row.actions.slice(row.firstLineActions)"
                         :key="index + row.firstLineActions"
@@ -330,7 +372,9 @@
                     </div>
 
                     <!-- 第二行的添加动作控件 -->
-                    <div v-if="getExtendedLineActionCount(row.actions.slice(row.firstLineActions)) < 5">
+                    <div
+                      v-if="getExtendedLineActionCount(row.actions.slice(row.firstLineActions)) < 5"
+                    >
                       <el-form :inline="true" style="margin: 0">
                         <el-form-item style="margin: 0 10px 0 0">
                           <el-select
@@ -374,7 +418,15 @@
                   </div>
 
                   <!-- 右侧：额外操作和重开按钮 -->
-                  <div style="display: flex; align-items: center; gap: 10px; margin-left: auto; margin-right: 0;">
+                  <div
+                    style="
+                      display: flex;
+                      align-items: center;
+                      gap: 10px;
+                      margin-left: auto;
+                      margin-right: 0;
+                    "
+                  >
                     <!-- 额外操作添加 -->
                     <el-form :inline="true" style="margin: 0">
                       <el-form-item style="margin: 0 10px 0 0">
@@ -384,12 +436,21 @@
                           size="small"
                           style="width: 120px"
                         >
-                          <el-option label="切换至左侧目标" value="左侧目标"></el-option>
-                          <el-option label="切换至右侧目标" value="右侧目标"></el-option>
-                          <el-option label="识别暴击/翻倍（未实装）" value="判断数字"></el-option>
+                          <el-option
+                            label="切换至左侧目标"
+                            value="左侧目标"
+                          ></el-option>
+                          <el-option
+                            label="切换至右侧目标"
+                            value="右侧目标"
+                          ></el-option>
+                          <el-option
+                            label="识别暴击/翻倍（未实装）"
+                            value="判断数字"
+                          ></el-option>
                         </el-select>
                       </el-form-item>
-                      <el-form-item style="margin: 0 20px 0 0">
+                      <el-form-item style="margin: 0 5px 0 0">
                         <el-button
                           type="warning"
                           size="small"
@@ -499,14 +560,16 @@
                     <el-select
                       v-model="levelType"
                       placeholder="关卡类别"
-                      style="width: 130px"
+                      style="width: 145px"
                       size="default"
                     >
                       <el-option label="主线" value="主线"></el-option>
                       <el-option label="洞窟" value="洞窟"></el-option>
-                      <el-option label="活动-有难度分级" value="活动有分级"></el-option>
+                      <el-option
+                        label="活动-有难度分级"
+                        value="活动有分级"
+                      ></el-option>
                       <el-option label="其他" value="其他"></el-option>
-
                     </el-select>
                   </el-form-item>
 
@@ -522,11 +585,14 @@
                   </el-form-item>
 
                   <!-- 添加难度输入框，仅在选择活动（有难度分级）时显示 -->
-                  <el-form-item v-if="levelType === '活动有分级'" style="margin-bottom: 0">
+                  <el-form-item
+                    v-if="levelType === '活动有分级'"
+                    style="margin-bottom: 0"
+                  >
                     <el-input
                       v-model="difficulty"
                       placeholder="关卡难度"
-                      style="width: 95px"
+                      style="width: 85px"
                       size="default"
                     >
                     </el-input>
@@ -550,7 +616,7 @@
                   <el-input
                     v-model="levelName"
                     placeholder="请输入作业名称，如关卡/配队"
-                    style="width: 250px"
+                    style="width: 255px"
                     size="default"
                   >
                   </el-input>
@@ -614,38 +680,38 @@
       </div>
     </div>
 
-    <!-- 修改脚本加载部分 -->
-
     <!-- 1. 首先加载 Vue -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.prod.min.js"></script>
+    <script src="/assets/vue.global.prod.min.js"></script>
 
-    <!-- 2. 等 Vue 加载完后再加载其他依赖 -->
-    <script>
-      // 确保 Vue 已经加载完成
-      window.onload = function () {
-        // 动态加载 Element Plus
-        const elementScript = document.createElement("script");
-        elementScript.src =
-          "https://cdnjs.cloudflare.com/ajax/libs/element-plus/2.3.8/index.full.min.js";
-        elementScript.onload = function () {
-          // Element Plus 加完成加载图标
-          const iconScript = document.createElement("script");
-          iconScript.src =
-            "https://cdnjs.cloudflare.com/ajax/libs/element-plus-icons-vue/2.1.0/index.iife.min.js";
-          iconScript.onload = function () {
-            // 图标加载完成初始化应用
-            initApp();
-          };
-          document.head.appendChild(iconScript);
-        };
-        document.head.appendChild(elementScript);
-      };
-    </script>
+    <!-- 2. 加载 Element Plus 和图标 -->
+    <script src="/assets/index.full.min.js"></script>
+    <script src="/assets/index.iife.min.js"></script>
 
     <!-- 3. 加载 Axios -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js"></script>
+    <script src="/assets/axios.min.js"></script>
 
-    <!-- 4. 最后加载应用代码 -->
+    <!-- 4. 初始化应用的脚本 -->
+    <script>
+      // 等待所有资源加载完成
+      window.addEventListener("load", function () {
+        if (typeof Vue === "undefined") {
+          console.error("Vue 加载失败");
+          return;
+        }
+        if (typeof ElementPlus === "undefined") {
+          console.error("Element Plus 加载失败");
+          return;
+        }
+        if (typeof axios === "undefined") {
+          console.error("Axios 加载失败");
+          return;
+        }
+        // 初始化应用
+        initApp();
+      });
+    </script>
+
+    <!-- 5. 最后加载应用代码 -->
     <script>
       function initApp() {
         const { createApp, ref, onMounted, computed, watch } = Vue;
@@ -671,7 +737,7 @@
             const levelRecognitionName = ref(
               localStorage.getItem("levelRecognitionName") || ""
             ); // 添加关卡名称（识别用）响应式变量
-            const difficulty = ref(localStorage.getItem('difficulty') || '');
+            const difficulty = ref(localStorage.getItem("difficulty") || "");
             const selectedExtraActions = ref({});
             const selectedExtraActionsExtended = ref({});
 
@@ -685,9 +751,13 @@
                   const actions = Array.isArray(allActions.value[roundStr])
                     ? [...allActions.value[roundStr]]
                     : [];
-                  const isExtended = allActions.value[roundStr]?.isExtended || false;
-                  const firstLineActions = allActions.value[roundStr]?.firstLineActions || actions.length;
-                  const firstLineRegularActions = allActions.value[roundStr]?.firstLineRegularActions || 0;
+                  const isExtended =
+                    allActions.value[roundStr]?.isExtended || false;
+                  const firstLineActions =
+                    allActions.value[roundStr]?.firstLineActions ||
+                    actions.length;
+                  const firstLineRegularActions =
+                    allActions.value[roundStr]?.firstLineRegularActions || 0;
                   return {
                     roundNum: roundStr,
                     actions: actions,
@@ -695,24 +765,41 @@
                     firstLineActions: firstLineActions,
                     firstLineRegularActions: firstLineRegularActions,
                   };
-              });
+                });
             });
 
-            const getFirstLineRegularActionCount = (actions, firstLineActions) => {
-              return actions.slice(0, firstLineActions).filter(action =>
-                !action[0].startsWith('重开:') &&
-                !action[0].startsWith('额外:')
-              ).length;
+            const getFirstLineRegularActionCount = (
+              actions,
+              firstLineActions
+            ) => {
+              return actions
+                .slice(0, firstLineActions)
+                .filter(
+                  (action) =>
+                    !action[0].startsWith("重开:") &&
+                    !action[0].startsWith("额外:")
+                ).length;
             };
 
-            const getExtendedLineRegularActionCount = (actions, firstLineActions) => {
-              return actions.slice(firstLineActions).filter(action =>
-                !action[0].startsWith('重开:') &&
-                !action[0].startsWith('额外:')
-              ).length;
+            const getExtendedLineRegularActionCount = (
+              actions,
+              firstLineActions
+            ) => {
+              return actions
+                .slice(firstLineActions)
+                .filter(
+                  (action) =>
+                    !action[0].startsWith("重开:") &&
+                    !action[0].startsWith("额外:")
+                ).length;
             };
-            
-            const saveStateToLocalStorage = (roundNum, isExtended, firstLineActions, firstLineRegularActions) => {
+
+            const saveStateToLocalStorage = (
+              roundNum,
+              isExtended,
+              firstLineActions,
+              firstLineRegularActions
+            ) => {
               const key = `round_${roundNum}_state`;
               const state = {
                 isExtended,
@@ -743,7 +830,9 @@
 
             const loadAllActions = async () => {
               try {
-                const response = await axios.get("http://127.0.0.1:5000/api/actions");
+                const response = await axios.get(
+                  "http://127.0.0.1:5000/api/actions"
+                );
                 const actions = response.data;
 
                 // 确保每个回合的动作都是数组
@@ -762,7 +851,8 @@
                   actions[roundNum] = currentActions;
                   actions[roundNum].isExtended = state.isExtended;
                   actions[roundNum].firstLineActions = state.firstLineActions;
-                  actions[roundNum].firstLineRegularActions = state.firstLineRegularActions;
+                  actions[roundNum].firstLineRegularActions =
+                    state.firstLineRegularActions;
                 });
 
                 allActions.value = actions;
@@ -791,45 +881,59 @@
                   : [];
 
                 // 获取当前状态
-                const currentState = loadStateFromLocalStorage(roundNum, currentActions.length);
+                const currentState = loadStateFromLocalStorage(
+                  roundNum,
+                  currentActions.length
+                );
 
-                const isRegularAction = true; 
+                const isRegularAction = true;
 
                 if (!isExtended) {
-                  let firstLineRegularActions = currentState.firstLineRegularActions || 0;
+                  let firstLineRegularActions =
+                    currentState.firstLineRegularActions || 0;
 
                   if (currentState.isExtended && firstLineRegularActions >= 4) {
-                    ElementPlus.ElMessage.warning("扩展栏激活时第一行最多只能有4个常规动作");
+                    ElementPlus.ElMessage.warning(
+                      "扩展栏激活时第一行最多只能有4个常规动作"
+                    );
                     return;
                   }
 
                   firstLineRegularActions += 1;
-                  currentState.firstLineRegularActions = firstLineRegularActions;
+                  currentState.firstLineRegularActions =
+                    firstLineRegularActions;
                 }
 
                 const newAction = [`${position}${action}`];
 
                 // 根据是否为扩展行决定插入位置
-                const insertIndex = isExtended 
-                  ? currentActions.length  // 扩展行则添加到末尾
-                  : (currentState.firstLineActions || 0);  // 第一行则添加到第一行末尾
+                const insertIndex = isExtended
+                  ? currentActions.length // 扩展行则添加到末尾
+                  : currentState.firstLineActions || 0; // 第一行则添加到第一行末尾
 
                 // 在正确位置插入新动作
                 currentActions.splice(insertIndex, 0, newAction);
-                    
+
                 // 更新第一行动作计数
                 if (!isExtended) {
-                  currentState.firstLineActions = (currentState.firstLineActions || 0) + 1;
+                  currentState.firstLineActions =
+                    (currentState.firstLineActions || 0) + 1;
                 }
-                
+
                 // 更新后端
-                await axios.put(`${API_BASE_URL}/actions/${roundNum}`, currentActions);
+                await axios.put(
+                  `${API_BASE_URL}/actions/${roundNum}`,
+                  currentActions
+                );
 
                 // 更新前端状态
                 allActions.value[roundNum] = currentActions;
-                allActions.value[roundNum].isExtended = currentState.isExtended || false;
-                allActions.value[roundNum].firstLineActions = currentState.firstLineActions;
-                allActions.value[roundNum].firstLineRegularActions = currentState.firstLineRegularActions;
+                allActions.value[roundNum].isExtended =
+                  currentState.isExtended || false;
+                allActions.value[roundNum].firstLineActions =
+                  currentState.firstLineActions;
+                allActions.value[roundNum].firstLineRegularActions =
+                  currentState.firstLineRegularActions;
 
                 // 保存新状态到localStorage
                 saveStateToLocalStorage(
@@ -855,7 +959,6 @@
               }
             };
 
-
             const removeAction = async (roundNum, index) => {
               const round = allActions.value[roundNum];
               if (!round) return;
@@ -868,10 +971,13 @@
                 round.length
               );
 
-              let firstLineRegularActions = currentState.firstLineRegularActions || 0;
+              let firstLineRegularActions =
+                currentState.firstLineRegularActions || 0;
 
               const actionToRemove = round[index][0];
-              const isRegularAction = !actionToRemove.startsWith('重开:') && !actionToRemove.startsWith('额外:');
+              const isRegularAction =
+                !actionToRemove.startsWith("重开:") &&
+                !actionToRemove.startsWith("额外:");
 
               // 创建新的动作数组
               const newActions = [...round];
@@ -884,15 +990,19 @@
                   firstLineRegularActions -= 1;
                 }
               }
-  
+
               try {
-                await axios.put(`${API_BASE_URL}/actions/${roundNum}`, newActions);
+                await axios.put(
+                  `${API_BASE_URL}/actions/${roundNum}`,
+                  newActions
+                );
 
                 // 更新状态时保持扩展状态
                 allActions.value[roundNum] = newActions;
                 allActions.value[roundNum].isExtended = currentState.isExtended;
-                allActions.value[roundNum].firstLineActions = currentState.firstLineActions;
-                
+                allActions.value[roundNum].firstLineActions =
+                  currentState.firstLineActions;
+
                 // 更新状态
                 saveStateToLocalStorage(
                   roundNum,
@@ -1054,7 +1164,10 @@
                   ElementPlus.ElMessage.warning("请输入关卡名称（识别用）");
                   return;
                 }
-                if (levelType.value === '活动有分级' && !difficulty.value.trim()) {
+                if (
+                  levelType.value === "活动有分级" &&
+                  !difficulty.value.trim()
+                ) {
                   ElementPlus.ElMessage.warning("请输入关卡难度");
                   return;
                 }
@@ -1201,7 +1314,7 @@
                 const currentActions = Array.isArray(allActions.value[roundNum])
                   ? [...allActions.value[roundNum]]
                   : [];
-                
+
                 // 加载当前状态
                 const currentState = loadStateFromLocalStorage(
                   roundNum,
@@ -1211,7 +1324,8 @@
                 // 设置扩展状态
                 currentState.isExtended = true;
                 // 如果未设置，则设置firstLineActions为当前第一行动作数量
-                currentState.firstLineActions = currentState.firstLineActions || currentActions.length;
+                currentState.firstLineActions =
+                  currentState.firstLineActions || currentActions.length;
 
                 // 保存更新后的状态
                 saveStateToLocalStorage(
@@ -1224,7 +1338,8 @@
                 // 更新动作数组
                 allActions.value[roundNum] = currentActions;
                 allActions.value[roundNum].isExtended = currentState.isExtended;
-                allActions.value[roundNum].firstLineActions = currentState.firstLineActions;
+                allActions.value[roundNum].firstLineActions =
+                  currentState.firstLineActions;
 
                 // 重置第二行的选择
                 selectedPositionsExtended.value[roundNum] = "";
@@ -1260,19 +1375,29 @@
 
             const handleDragOver = (event, roundNum, index, isExtended) => {
               // 只允许同一回合且同一区域（第一行或附加回合）内的拖拽
-              if (roundNum === dragSourceRound.value && isExtended === dragSourceIsExtended.value) {
+              if (
+                roundNum === dragSourceRound.value &&
+                isExtended === dragSourceIsExtended.value
+              ) {
                 event.preventDefault();
                 event.dataTransfer.dropEffect = "move";
               }
             };
 
-            const handleDrop = async (event, targetRound, targetIndex, isExtended) => {
+            const handleDrop = async (
+              event,
+              targetRound,
+              targetIndex,
+              isExtended
+            ) => {
               event.preventDefault();
 
               // 确保只在同一回合且同一区域内移动
-              if (draggedAction.value === null || 
-                  targetRound !== dragSourceRound.value || 
-                  isExtended !== dragSourceIsExtended.value) {
+              if (
+                draggedAction.value === null ||
+                targetRound !== dragSourceRound.value ||
+                isExtended !== dragSourceIsExtended.value
+              ) {
                 return;
               }
 
@@ -1280,8 +1405,11 @@
               const actions = [...allActions.value[targetRound]];
 
               // 保存当前的扩展状态和第一行动作数量
-              const isExtendedState = allActions.value[targetRound]?.isExtended || false;
-              const firstLineActionsCount = allActions.value[targetRound]?.firstLineActions || actions.length;
+              const isExtendedState =
+                allActions.value[targetRound]?.isExtended || false;
+              const firstLineActionsCount =
+                allActions.value[targetRound]?.firstLineActions ||
+                actions.length;
 
               if (!isExtended) {
                 // 在第一行内移动
@@ -1325,12 +1453,16 @@
               actions.firstLineActions = firstLineActionsCount;
 
               try {
-                await axios.put(`${API_BASE_URL}/actions/${targetRound}`, actions);
+                await axios.put(
+                  `${API_BASE_URL}/actions/${targetRound}`,
+                  actions
+                );
 
                 // 更新动作数组时保持扩展状态
                 allActions.value[targetRound] = actions;
                 allActions.value[targetRound].isExtended = isExtendedState;
-                allActions.value[targetRound].firstLineActions = firstLineActionsCount;
+                allActions.value[targetRound].firstLineActions =
+                  firstLineActionsCount;
 
                 ElementPlus.ElMessage.success("动作顺序已更新");
               } catch (error) {
@@ -1344,7 +1476,9 @@
             const addRestart = async (roundNum, isExtended) => {
               try {
                 // 根据是否为扩展行选择对应的重开类型
-                const restartType = selectedRestartExtended.value[roundNum] || selectedRestart.value[roundNum];
+                const restartType =
+                  selectedRestartExtended.value[roundNum] ||
+                  selectedRestart.value[roundNum];
                 if (!restartType) {
                   ElementPlus.ElMessage.warning("请选择重开类型");
                   return;
@@ -1361,37 +1495,48 @@
                 }
 
                 // 获取当前状态
-                const currentState = loadStateFromLocalStorage(roundNum, currentActions.length);
+                const currentState = loadStateFromLocalStorage(
+                  roundNum,
+                  currentActions.length
+                );
 
                 // 创建新的重开动作
-                const newAction = [`重开:${restartType === "全灭重开" ? "全灭" : "左上角"}`];
-                
+                const newAction = [
+                  `重开:${restartType === "全灭重开" ? "全灭" : "左上角"}`,
+                ];
+
                 // 根据是否为扩展行决定插入位置
-                const insertIndex = isExtended 
-                  ? currentActions.length  // 扩展行则添加到末尾
-                  : (currentState.firstLineActions || 0);  // 第一行则添加到第一行末尾
+                const insertIndex = isExtended
+                  ? currentActions.length // 扩展行则添加到末尾
+                  : currentState.firstLineActions || 0; // 第一行则添加到第一行末尾
 
                 currentActions.splice(insertIndex, 0, newAction);
 
                 // 更新第一行动作计数
                 if (!isExtended) {
-                  currentState.firstLineActions = (currentState.firstLineActions || 0) + 1;
+                  currentState.firstLineActions =
+                    (currentState.firstLineActions || 0) + 1;
                 }
 
                 // 直接更新动作数组
-                await axios.put(`${API_BASE_URL}/actions/${roundNum}`, currentActions);
+                await axios.put(
+                  `${API_BASE_URL}/actions/${roundNum}`,
+                  currentActions
+                );
 
                 // 更新本地状态
                 allActions.value[roundNum] = currentActions;
-                allActions.value[roundNum].isExtended = currentState.isExtended || false;
-                allActions.value[roundNum].firstLineActions = currentState.firstLineActions;
+                allActions.value[roundNum].isExtended =
+                  currentState.isExtended || false;
+                allActions.value[roundNum].firstLineActions =
+                  currentState.firstLineActions;
 
                 saveStateToLocalStorage(
                   roundNum,
                   currentState.isExtended,
                   currentState.firstLineActions,
                   currentState.firstLineRegularActions || 0
-                ); 
+                );
 
                 // 重置选择
                 if (isExtended) {
@@ -1409,8 +1554,8 @@
 
             const addExtraAction = async (roundNum, isExtended) => {
               try {
-                const extraAction = isExtended 
-                  ? selectedExtraActionsExtended.value[roundNum] 
+                const extraAction = isExtended
+                  ? selectedExtraActionsExtended.value[roundNum]
                   : selectedExtraActions.value[roundNum];
 
                 if (!extraAction) {
@@ -1423,28 +1568,37 @@
                   : [];
 
                 // 保持扩展状态
-                const currentState = loadStateFromLocalStorage(roundNum, currentActions.length);
+                const currentState = loadStateFromLocalStorage(
+                  roundNum,
+                  currentActions.length
+                );
 
                 // 创建新的额外操作
                 const newAction = [`额外:${extraAction}`];
 
                 // 根据是否为扩展行决定插入位置
-                const insertIndex = isExtended 
-                  ? currentActions.length  // 扩展行则添加到末尾
-                  : (currentState.firstLineActions || 0);  // 第一行则添加到第一行末尾
+                const insertIndex = isExtended
+                  ? currentActions.length // 扩展行则添加到末尾
+                  : currentState.firstLineActions || 0; // 第一行则添加到第一行末尾
 
                 currentActions.splice(insertIndex, 0, newAction);
 
                 // 更新第一行动作计数
                 if (!isExtended) {
-                  currentState.firstLineActions = (currentState.firstLineActions || 0) + 1;
+                  currentState.firstLineActions =
+                    (currentState.firstLineActions || 0) + 1;
                 }
 
-                await axios.put(`${API_BASE_URL}/actions/${roundNum}`, currentActions);
+                await axios.put(
+                  `${API_BASE_URL}/actions/${roundNum}`,
+                  currentActions
+                );
 
                 allActions.value[roundNum] = currentActions;
-                allActions.value[roundNum].isExtended = currentState.isExtended || false;
-                allActions.value[roundNum].firstLineActions = currentState.firstLineActions;
+                allActions.value[roundNum].isExtended =
+                  currentState.isExtended || false;
+                allActions.value[roundNum].firstLineActions =
+                  currentState.firstLineActions;
 
                 saveStateToLocalStorage(
                   roundNum,
@@ -1480,7 +1634,7 @@
             });
 
             watch(difficulty, (newValue) => {
-              localStorage.setItem('difficulty', newValue);
+              localStorage.setItem("difficulty", newValue);
             });
 
             onMounted(() => {
@@ -1488,17 +1642,19 @@
             });
 
             const getFirstLineActionCount = (actions) => {
-              return actions.filter(action => 
-                !action[0].startsWith('重开:') && 
-                !action[0].startsWith('额外:') &&
-                !action[0].includes(':')
+              return actions.filter(
+                (action) =>
+                  !action[0].startsWith("重开:") &&
+                  !action[0].startsWith("额外:") &&
+                  !action[0].includes(":")
               ).length;
             };
 
             const getExtendedLineActionCount = (actions) => {
-              return actions.filter(action => 
-                !action[0].startsWith('重开:') && 
-                !action[0].startsWith('额外:')
+              return actions.filter(
+                (action) =>
+                  !action[0].startsWith("重开:") &&
+                  !action[0].startsWith("额外:")
               ).length;
             };
 

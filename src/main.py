@@ -33,6 +33,14 @@ def resource_path(relative_path):
 def serve_index():
     return send_from_directory(resource_path('frontend'), 'index.html')
 
+@app.route('/assets/<path:filename>')
+def serve_assets(filename):
+    return send_from_directory(resource_path('frontend/assets'), filename)
+
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    return send_from_directory(resource_path('frontend/static'), filename)
+
 def run_server():
     app.run(port=5000)
 
@@ -45,8 +53,8 @@ def create_window():
     webview.create_window(
         'MAA鸢/司命 - 勘天篆命',
         'http://127.0.0.1:5000',
-        width=1500,
-        height=800,
+        width=1600,
+        height=900,
         resizable=True,
         min_size=(800, 600)
     )
