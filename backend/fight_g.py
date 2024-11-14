@@ -20,7 +20,7 @@ def get_template_path():
     else:
         return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates', 'fight_action.json')
 
-def generate_config(input_path, output_path, level_type='', level_recognition_name='', difficulty=''):
+def generate_config(input_path, output_path, level_type='', level_recognition_name='', difficulty='', cave_type=''):
     """生成配置文件"""
     try:
         # 读取输入配置
@@ -41,7 +41,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
         def get_action(action_code):
             position = action_code[0]  # 获取位置编号，例如 "1"
             action_type = action_code[1]  # 获取动作类型，例如 "普"
-            key = f"{position}号位" + ("普攻" if action_type == "普" else "上拉" if action_type == "上" else "下拉")
+            key = f"{position}号位" + ("普攻" if action_type == "普" else "上拉" if action_type == "大" else "下拉")
             return action_templates.get(key)
 
         # 生成 JSON 配置
@@ -53,48 +53,81 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                 "expected": f"回合{round_num}",
                 "roi": [585, 28, 90, 65],
                 "next": [f"回合{round_num}行动1"],
-                "post_delay": 1000,
+                "post_delay": 2000,
             }
 
-        # 设置每个回合中的行动
-        for i, action_group in enumerate(actions, start=1):
-                action = action_group[0]  # 第一个元素是动作
-                action_config = get_action(action)
-                if action_config:
-                    action_key = f"回合{round_num}行动{i}"
-                    result_config[action_key] = action_config.copy()
+            # 处理每个回合中的动作
+            current_action_key = None
+            for i, action_group in enumerate(actions, start=1):
+                # 检查是否是额外操作
+                if isinstance(action_group, list) and len(action_group) > 0:
+                    action = action_group[0]  # 第一个元素是动作
 
-                    # 检查是否有重开设置
-                    restart_type = None
-                    if len(action_group) > 1 and action_group[1].startswith("重:"):
-                        restart_type = action_group[1].split(":")[1]
+                    if action.startswith('额外:'):
+                        extra_action_type = action.split(':')[1]
+                        extra_action_key = f"回合{round_num}行动{i}"
 
-                    # 设置next
-                    if int(round_num) == max_round_num and i == len(actions):
-                        result_config[action_key]["next"] = []
-                        if restart_type:
-                            restart_node = f"抄作业{restart_type}重开" if restart_type == "全灭" else f"抄作业点左上角重开"
-                            result_config[action_key]["next"].append(restart_node)
+                        # 配置额外操作
+                        if extra_action_type == "左侧目标":
+                            result_config[extra_action_key] = {
+                                "action": "Swipe",
+                                "begin": [207, 745, 1, 1],
+                                "end": [406, 745, 1, 1],
+                                "post_delay": 2000,
+                                "duration": 800
+                            }
+                        elif extra_action_type == "右侧目标":
+                            result_config[extra_action_key] = {
+                                "action": "Swipe",
+                                "begin": [406, 745, 1, 1],
+                                "end": [207, 745, 1, 1],
+                                "post_delay": 2000,
+                                "duration": 800
+                            }
+                        # elif extra_action_type == "判断数字":
+                        #     result_config[extra_action_key] = {
+                        #     }
+
+                        # 设置前一个动作的next为当前额外操作
+                        if current_action_key:
+                            result_config[current_action_key]["next"] = [extra_action_key]
+
+                        current_action_key = extra_action_key
+                    elif action.startswith('重开:'):
+                        # 处理重开操作
+                        restart_type = action.split(':')[1]
+                        restart_node = f"抄作业{restart_type}重开" if restart_type == "全灭" else f"抄作业点左上角重开"
+                        if current_action_key:
+                            result_config[current_action_key]["next"] = [restart_node]
+                            if i < len(actions):
+                                result_config[current_action_key]["next"].append(f"回合{round_num}行动{i + 1}")
+                            elif int(round_num) < max_round_num:
+                                result_config[current_action_key]["next"].append(f"检测回合{int(round_num)+1}")
                     else:
-                        next_action = f"回合{round_num}行动{i + 1}" if i < len(actions) else f"检测回合{int(round_num)+1}"
-                        result_config[action_key]["next"] = []
-                        if restart_type:
-                            restart_node = f"抄作业{restart_type}重开" if restart_type == "全灭" else f"抄作业点左上角重开"
-                            result_config[action_key]["next"].append(restart_node)
-                        result_config[action_key]["next"].append(next_action)
+                        # 处理普通动作
+                        action_config = get_action(action)
+                        if action_config:
+                            action_key = f"回合{round_num}行动{i}"
+                            result_config[action_key] = action_config.copy()
 
-                    # 设置错误处理
-                    if i == 9:
-                        result_config[action_key]["on_error"] = [f"检测回合{round_num}"]
+                            if current_action_key:
+                                result_config[current_action_key]["next"] = [action_key]
 
+                            current_action_key = action_key
+
+                            # 如果是当前回合的最后一个动作，设置next指向下一回合
+                            if i == len(actions) and int(round_num) < max_round_num:
+                                result_config[action_key]["next"] = [f"检测回合{int(round_num)+1}"]
 
         # 根据关卡类别设置重开后的导航节点
         if level_type == '主线':
             next_node = "抄作业找到关卡-主线"
         elif level_type == '洞窟':
-            next_node = "抄作业找到关卡-洞窟"
+            next_node = "抄作业进入关卡-洞窟"
         elif level_type == '活动有分级':
             next_node = "抄作业找到关卡-活动分级"
+        elif level_type == '白鹄':
+            next_node = "抄作业进入关卡-白鹄"
         else:
             next_node = "抄作业找到关卡-OCR"
 
@@ -113,16 +146,30 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
 
         # 根据关卡类别和识别名称设置对应的导航节点
         if level_type == '洞窟':
-            result_config["抄作业找到关卡-洞窟"] = {
-                "recognition": "OCR",
-                "expected": level_recognition_name,  # 使用传入的识别名称
-                "roi": [0,249,720,1030],
-                "action": "Click",
-                "target_offset": [-27, 443, -22, -69],
-                "pre_delay": 1500,
-                "next": ["抄作业战斗开始"],
-                "timeout": 20000
-            }
+            if cave_type == '左':
+                result_config["抄作业进入关卡-洞窟"] = {
+                    "text_doc": "左",
+                    "recognition": "OCR",
+                    "expected": "前往",
+                    "roi" : [237,810,82,89],
+                    "action": "Click",
+                    "target": [258,833,42,39],
+                    "pre_delay": 1500,
+                    "next": ["抄作业战斗开始"],
+                    "timeout": 20000
+                }
+            else:
+                result_config["抄作业进入关卡-洞窟"] = {
+                    "text_doc": "右",
+                    "recognition": "OCR",
+                    "expected": "前往",
+                    "roi" : [558,804,79,89],
+                    "action": "Click",
+                    "target": [581,832,41,41],
+                    "pre_delay": 1500,
+                    "next": ["抄作业战斗开始"],
+                    "timeout": 20000
+                }
         elif level_type == '活动有分级':
             result_config["抄作业找到关卡-活动分级"] = {
                 "recognition": "OCR",
@@ -142,7 +189,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                 "next": ["抄作业进入关卡"],
                 "timeout": 20000
             }
-        elif level_type != '主线':  # 非主线且非洞窟的情况
+        elif level_type != '主线' and level_type != '白鹄':  # 其他的情况
             result_config["抄作业找到关卡-OCR"] = {
                 "recognition": "OCR",
                 "expected": level_recognition_name,  # 使用传入的识别名称
@@ -153,86 +200,6 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                 "timeout": 20000
             }
 
-        # 加载必要动作
-        result_config["抄作业全灭重开"] = {
-            "recognition": "OCR",
-            "expected": "再次挑战",
-            "roi": [402, 1099, 218, 59],
-            "pre_wait_freezes": 500,
-            "post_delay": 2000,
-            "action": "Click",
-            "next": ["抄作业战斗开始"],
-            "timeout": 20000
-        }
-
-        result_config["抄作业找到关卡-主线"] = {
-            "recognition": "ColorMatch",
-            "roi": [98, 527, 519, 43],
-            "method": 4,
-            "upper": [225, 131, 131],
-            "lower": [170, 50, 50],
-            "count": 4500,
-            "order_by": "Score",
-            "connected": True,
-            "action": "Click",
-            "pre_delay": 2000,
-            "next": ["抄作业战斗开始"],
-            "timeout": 20000
-        }
-
-        # todo 需要根据活动调整
-        result_config["抄作业进入关卡"] = {
-            "next": ["抄作业进入关卡-首通","抄作业进入关卡-多刷"],
-            "timeout": 20000
-        }
-
-        result_config["抄作业进入关卡-首通"] = {
-            "recognition": "OCR",
-            "expected": "挑战",
-            "roi" : [253,874,202,77],
-            "action": "Click",
-            "pre_delay": 1500,
-            "next": ["抄作业战斗开始"],
-            "timeout": 20000
-        }       
-
-        result_config["抄作业进入关卡-多刷"] = {
-            "recognition": "OCR",
-            "expected": "体验",
-            "roi": [82,707,561,470],
-            "action": "Click",
-            "pre_delay": 1500,
-            "next": ["抄作业战斗开始"],
-            "timeout": 20000
-        }
-
-        result_config["抄作业战斗开始"] = {
-            "recognition": "OCR",
-            "expected": "开始战斗",
-            "roi": [264, 1158, 201, 51],
-            "action": "Click",
-            "pre_wait_freezes": 500,
-            "next": ["抄作业切一下手动","检测回合1"],
-            "timeout": 20000
-        }
-
-        result_config["抄作业切一下手动"] = {
-            "is_sub": True,
-            "recognition": "OCR",
-            "expected": "自动",
-            "roi": [635, 610, 85, 95],
-            "action": "Click"
-        }
-
-        result_config["抄作业确定左上角重开"] = {
-            "is_sub": True,
-            "recognition": "OCR",
-            "expected": "确定",
-            "roi": [434,737,129,61],
-            "pre_wait_freezes": 500,
-            "post_delay": 2000,
-            "action": "Click"
-        }
 
         # 保存输出配置
         with open(output_path, 'w', encoding='utf-8') as f:
@@ -250,94 +217,100 @@ def reverse_config(config_data):
     config_info = {
         'level_type': '',
         'level_recognition_name': '',
-        'difficulty': ''  # 添加难度字段
+        'difficulty': '',
+        'cave_type': ''
     }
 
     # 检测关卡类型和识别名称
     restart_node = config_data.get("抄作业点左上角重开", {})
     next_nodes = restart_node.get("next", [])
-    
+
     if len(next_nodes) >= 2:  # 确保有第二个节点
         next_node = next_nodes[1]  # 获取第二个节点
         if next_node == "抄作业找到关卡-主线":
             config_info['level_type'] = '主线'
-        elif next_node == "抄作业找到关卡-洞窟":
+        elif next_node == "抄作业进入关卡-洞窟":
             config_info['level_type'] = '洞窟'
-            config_info['level_recognition_name'] = config_data.get("抄作业找到关卡-洞窟", {}).get("expected", "")
+            config_info['cave_type'] = config_data.get("抄作业进入关卡-洞窟", {}).get("text_doc", "")
         elif next_node == "抄作业找到关卡-活动分级":
             config_info['level_type'] = '活动有分级'
             config_info['level_recognition_name'] = config_data.get("抄作业找到关卡-活动分级", {}).get("expected", "")
-            # 获取难度信息
             config_info['difficulty'] = config_data.get("抄作业选择活动分级", {}).get("expected", "")
+        elif next_node == "抄作业进入关卡-白鹄":
+            config_info['level_type'] = '白鹄'
         elif next_node == "抄作业找到关卡-OCR":
             config_info['level_type'] = '其他'
             config_info['level_recognition_name'] = config_data.get("抄作业找到关卡-OCR", {}).get("expected", "")
 
+    # 创建一个临时字典来存储每个回合的动作
+    temp_actions = {}
+    
     # 首先按回合号分组处理所有动作
     for key, value in config_data.items():
-        # 跳过检测回合配置
+        # 跳过检测回合配置和其他非动作配置
         if not key.startswith('回合') or '检测' in key:
             continue
 
-        # 从键名中提取回合号
-        # 例如: "回合1行动1" -> round_num = "1"
-        round_num = key.split('回合')[1].split('行动')[0]
+        # 从键名中提取回合号和动作序号
+        parts = key.split('回合')[1].split('行动')
+        round_num = parts[0]  # 基础回合号（如 "2" 或 "2额外2"）
+        action_num = int(parts[1]) if len(parts) > 1 else 0
 
-        # 初始化该回合的动作列表
-        if round_num not in round_actions:
-            round_actions[round_num] = []
+        # 确保回合存在于临时字典中
+        if round_num not in temp_actions:
+            temp_actions[round_num] = []
 
-        # 解析普通动作
+        # 解析动作类型
         action_code = None
-        if value.get('action') == 'Click':
+        
+        # 检查是否是额外操作
+        if value.get('action') == 'Swipe':
+            begin = value.get('begin', [0, 0, 0, 0])
+            end = value.get('end', [0, 0, 0, 0])
+            
+            # 检查是否是目标切换操作
+            if begin[0] == 207 and end[0] == 406:  # 左侧目标
+                action_code = "额外:左侧目标"
+            elif begin[0] == 406 and end[0] == 207:  # 右侧目标
+                action_code = "额外:右侧目标"
+            else:
+                # 普通上下拉动作
+                x = begin[0]
+                position = '1' if x < 100 else '2' if x < 250 else '3' if x < 400 else '4' if x < 550 else '5'
+                action_code = f"{position}{'上' if end[1] < begin[1] else '下'}"
+        
+        elif value.get('action') == 'Click':
             # 从目标坐标判断位置号
             target = value.get('target', [0, 0, 0, 0])
             x = target[0]
-            if x < 100:
-                position = '1'
-            elif x < 250:
-                position = '2'
-            elif x < 400:
-                position = '3'
-            elif x < 550:
-                position = '4'
-            else:
-                position = '5'
+            position = '1' if x < 100 else '2' if x < 250 else '3' if x < 400 else '4' if x < 550 else '5'
             action_code = f"{position}普"
 
-        elif value.get('action') == 'Swipe':
-            # 从起点坐标判断位置号
-            begin = value.get('begin', [0, 0, 0, 0])
-            end = value.get('end', [0, 0, 0, 0])
-            x = begin[0]
-            if x < 100:
-                position = '1'
-            elif x < 250:
-                position = '2'
-            elif x < 400:
-                position = '3'
-            elif x < 550:
-                position = '4'
-            else:
-                position = '5'
-
-            # 通过终点y坐标判断是上拉还是下拉
-            if end[1] < begin[1]:
-                action_code = f"{position}上"
-            else:
-                action_code = f"{position}下"
-
+        # 检查下一个动作是否是重开
+        next_actions = value.get('next', [])
         if action_code:
-            action_group = [action_code]
+            # 将动作和序号一起存储
+            temp_actions[round_num].append((action_num, [action_code]))
 
             # 检查是否有重开配置
-            if value.get('next'):
-                if "抄作业全灭重开" in value['next']:
-                    action_group.append("重:全灭")
-                elif "抄作业点左上角重开" in value['next']:
-                    action_group.append("重:左上角")
+            next_actions = value.get('next', [])
+            if next_actions:
+                if "抄作业全灭重开" in next_actions:
+                    temp_actions[round_num].append((action_num + 0.5, ["重开:全灭"]))
+                elif "抄作业点左上角重开" in next_actions:
+                    temp_actions[round_num].append((action_num + 0.5, ["重开:左上角"]))
 
-            round_actions[round_num].append(action_group)
+    # 处理临时动作列表，按序号排序并合并到最终结果
+    for round_num, actions in temp_actions.items():
+        # 提取基础回合号（去掉可能的"额外"标记）
+        base_round = round_num.split('额外')[0]
+        if base_round not in round_actions:
+            round_actions[base_round] = []
+        
+        # 按动作序号排序并添加到结果中
+        sorted_actions = sorted(actions, key=lambda x: x[0])
+        for _, action in sorted_actions:
+            round_actions[base_round].append(action)
 
     return {
         'actions': round_actions,
@@ -354,5 +327,6 @@ if __name__ == '__main__':
     level_type = sys.argv[3] if len(sys.argv) > 3 else ''
     level_recognition_name = sys.argv[4] if len(sys.argv) > 4 else ''
     difficulty = sys.argv[5] if len(sys.argv) > 5 else ''
+    cave_type = sys.argv[6] if len(sys.argv) > 6 else ''
 
-    generate_config(input_path, output_path, level_type, level_recognition_name, difficulty)
+    generate_config(input_path, output_path, level_type, level_recognition_name, difficulty, cave_type)

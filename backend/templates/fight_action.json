@@ -3,13 +3,15 @@
     "action": "Swipe",
     "begin": [77, 991, 10, 1],
     "end": [77, 670, 10, 1],
-    "post_delay": 5000
+    "post_delay": 5000,
+    "duration": 800
   },
   "1号位下拉": {
     "action": "Swipe",
     "begin": [73, 985, 1, 1],
     "end": [73, 1258, 1, 1],
-    "post_delay": 3000
+    "post_delay": 3000,
+    "duration": 800
   },
   "1号位普攻": {
     "action": "Click",
@@ -26,13 +28,15 @@
     "action": "Swipe",
     "begin": [220, 996, 1, 1],
     "end": [225, 668, 1, 1],
-    "post_delay": 5000
+    "post_delay": 5000,
+    "duration": 800
   },
   "2号位下拉": {
     "action": "Swipe",
     "begin": [221, 975, 1, 1],
     "end": [221, 1251, 1, 1],
-    "post_delay": 3000
+    "post_delay": 3000,
+    "duration": 800
   },
   "2号位普攻": {
     "action": "Click",
@@ -43,13 +47,15 @@
     "action": "Swipe",
     "begin": [357, 975, 1, 1],
     "end": [357, 714, 1, 1],
-    "post_delay": 5000
+    "post_delay": 5000,
+    "duration": 800
   },
   "3号位下拉": {
     "action": "Swipe",
     "begin": [357, 975, 1, 1],
     "end": [357, 1237, 1, 1],
-    "post_delay": 3000
+    "post_delay": 3000,
+    "duration": 800
   },
   "3号位普攻": {
     "action": "Click",
@@ -60,13 +66,15 @@
     "action": "Swipe",
     "begin": [496, 980, 1, 1],
     "end": [496, 679, 1, 1],
-    "post_delay": 5000
+    "post_delay": 5000,
+    "duration": 800
   },
   "4号位下拉": {
     "action": "Swipe",
     "begin": [496, 985, 1, 1],
     "end": [496, 1258, 1, 1],
-    "post_delay": 3000
+    "post_delay": 3000,
+    "duration": 800
   },
   "4号位普攻": {
     "action": "Click",
@@ -77,13 +85,15 @@
     "action": "Swipe",
     "begin": [646, 987, 1, 1],
     "end": [642, 700, 1, 1],
-    "post_delay": 5000
+    "post_delay": 5000,
+    "duration": 800
   },
   "5号位下拉": {
     "action": "Swipe",
     "begin": [646, 985, 1, 1],
     "end": [646, 1258, 1, 1],
-    "post_delay": 3000
+    "post_delay": 3000,
+    "duration": 800
   },
   "5号位普攻": {
     "action": "Click",

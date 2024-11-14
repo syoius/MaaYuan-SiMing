@@ -173,6 +173,7 @@ def export_config():
         level_type = request.args.get('level_type', '')
         level_recognition_name = request.args.get('level_recognition_name', '')
         difficulty = request.args.get('difficulty', '')  # 获取难度参数
+        cave_type = request.args.get('cave_type', '')  # 获取洞窟类型参数
 
         if getattr(sys, 'frozen', False):
             # 打包环境
@@ -194,13 +195,13 @@ def export_config():
 
         if getattr(sys, 'frozen', False):
             # 打包环境的处理逻辑
-            fight_g.generate_config(temp_config_path, config_path, level_type, level_recognition_name, difficulty)
+            fight_g.generate_config(temp_config_path, config_path, level_type, level_recognition_name, difficulty, cave_type)
         else:
             # 开发环境下运行脚本
             python_executable = sys.executable
             result = subprocess.run(
-                [python_executable, script_path, temp_config_path, config_path, 
-                 level_type, level_recognition_name, difficulty],  # 添加难度参数
+                [python_executable, script_path, temp_config_path, config_path,
+                 level_type, level_recognition_name, difficulty, cave_type],  # 添加难度参数
                 capture_output=True,
                 text=True,
                 cwd=os.path.dirname(script_path)
@@ -311,6 +312,51 @@ def import_actions():
         })
     except Exception as e:
         print(f"导入失败: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/actions/restart', methods=['POST'])
+def add_restart():
+    """添加重开动作"""
+    try:
+        data = request.json
+        round_num = str(data['roundNum'])  # 确保round_num是字符串
+        restart_type = data['restartType']
+        is_extended = data.get('isExtended', False)
+
+        if not restart_type:
+            return jsonify({'error': '请选择重开类型'}), 400
+
+        # 加载当前配置
+        actions = load_actions()
+        
+        if round_num not in actions:
+            return jsonify({'error': '回合不存在'}), 404
+
+        current_actions = actions[round_num]
+        if not current_actions:
+            return jsonify({'error': '请先添加动作再设置重开'}), 400
+
+        # 创建重开动作
+        restart_text = "全灭" if restart_type == "全灭重开" else "左上角"
+        restart_action = [f"重开:{restart_text}"]
+        
+        # 获取firstLineActions
+        first_line_actions = current_actions.get('firstLineActions', len(current_actions))
+        
+        # 根据是否为扩展行，选择添加位置
+        if is_extended:
+            current_actions.append(restart_action)
+        else:
+            current_actions.insert(first_line_actions, restart_action)
+            current_actions['firstLineActions'] = first_line_actions + 1
+
+        # 保存更新后的动作
+        actions[round_num] = current_actions
+        save_actions(actions)
+
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        print(f"添加重开失败: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
