@@ -62,11 +62,11 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                 # 检查是否是额外操作
                 if isinstance(action_group, list) and len(action_group) > 0:
                     action = action_group[0]  # 第一个元素是动作
-                    
+
                     if action.startswith('额外:'):
                         extra_action_type = action.split(':')[1]
                         extra_action_key = f"回合{round_num}额外{i}"
-                        
+
                         # 配置额外操作
                         if extra_action_type == "左侧目标":
                             result_config[extra_action_key] = {
@@ -87,11 +87,11 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                         # elif extra_action_type == "判断数字":
                         #     result_config[extra_action_key] = {
                         #     }
-                        
+
                         # 设置前一个动作的next为当前额外操作
                         if current_action_key:
                             result_config[current_action_key]["next"] = [extra_action_key]
-                        
+
                         current_action_key = extra_action_key
                     elif action.startswith('重开:'):
                         # 处理重开操作
@@ -184,86 +184,6 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                 "timeout": 20000
             }
 
-        # 加载必要动作
-        result_config["抄作业全灭重开"] = {
-            "recognition": "OCR",
-            "expected": "再次挑战",
-            "roi": [402, 1099, 218, 59],
-            "pre_wait_freezes": 500,
-            "post_delay": 2000,
-            "action": "Click",
-            "next": ["抄作业战斗开始"],
-            "timeout": 20000
-        }
-
-        result_config["抄作业找到关卡-主线"] = {
-            "recognition": "ColorMatch",
-            "roi": [98, 527, 519, 43],
-            "method": 4,
-            "upper": [225, 131, 131],
-            "lower": [170, 50, 50],
-            "count": 4500,
-            "order_by": "Score",
-            "connected": True,
-            "action": "Click",
-            "pre_delay": 2000,
-            "next": ["抄作业战斗开始"],
-            "timeout": 20000
-        }
-
-        # todo 需要根据活动调整
-        result_config["抄作业进入关卡"] = {
-            "next": ["抄作业进入关卡-首通","抄作业进入关卡-多刷"],
-            "timeout": 20000
-        }
-
-        result_config["抄作业进入关卡-首通"] = {
-            "recognition": "OCR",
-            "expected": "挑战",
-            "roi" : [253,874,202,77],
-            "action": "Click",
-            "pre_delay": 1500,
-            "next": ["抄作业战斗开始"],
-            "timeout": 20000
-        }       
-
-        result_config["抄作业进入关卡-多刷"] = {
-            "recognition": "OCR",
-            "expected": "体验",
-            "roi": [82,707,561,470],
-            "action": "Click",
-            "pre_delay": 1500,
-            "next": ["抄作业战斗开始"],
-            "timeout": 20000
-        }
-
-        result_config["抄作业战斗开始"] = {
-            "recognition": "OCR",
-            "expected": "开始战斗",
-            "roi": [264, 1158, 201, 51],
-            "action": "Click",
-            "pre_wait_freezes": 500,
-            "next": ["抄作业切一下手动","检测回合1"],
-            "timeout": 20000
-        }
-
-        result_config["抄作业切一下手动"] = {
-            "is_sub": True,
-            "recognition": "OCR",
-            "expected": "自动",
-            "roi": [635, 610, 85, 95],
-            "action": "Click"
-        }
-
-        result_config["抄作业确定左上角重开"] = {
-            "is_sub": True,
-            "recognition": "OCR",
-            "expected": "确定",
-            "roi": [434,737,129,61],
-            "pre_wait_freezes": 500,
-            "post_delay": 2000,
-            "action": "Click"
-        }
 
         # 保存输出配置
         with open(output_path, 'w', encoding='utf-8') as f:
@@ -287,7 +207,7 @@ def reverse_config(config_data):
     # 检测关卡类型和识别名称
     restart_node = config_data.get("抄作业点左上角重开", {})
     next_nodes = restart_node.get("next", [])
-    
+
     if len(next_nodes) >= 2:  # 确保有第二个节点
         next_node = next_nodes[1]  # 获取第二个节点
         if next_node == "抄作业找到关卡-主线":
