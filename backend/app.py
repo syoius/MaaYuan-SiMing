@@ -136,18 +136,21 @@ def generate_loop():
 @app.route('/api/actions/add/<round_num>', methods=['POST'])
 def add_round(round_num):
     """新增回合"""
+    print(f"收到新增回合请求: round_num = {round_num}")  # 添加日志
     try:
         if int(round_num) > 50:
+            print(f"回合数超过限制: {round_num}")  # 添加日志
             return jsonify({'error': '超过50回合限制'}), 400
 
         actions = load_actions()
+        print(f"当前动作配置: {actions}")  # 添加日志
         if round_num not in actions:
             actions[round_num] = []  # 新回合默认为空列表
             save_actions(actions)
             print(f"新增回合 {round_num} 成功")
         return jsonify({'status': 'success'})
     except Exception as e:
-        print(f"新回合 {round_num} 失败: {str(e)}")
+        print(f"新增回合 {round_num} 失败: {str(e)}")  # 添加错误日志
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/rounds/<round_num>', methods=['DELETE'])

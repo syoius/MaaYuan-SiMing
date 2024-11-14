@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Maa鸢/司命 - 勘天刻命</title>
     <!-- Element Plus 的样式 -->
-    <link rel="stylesheet" href="/assets/index.css" />
+    <link rel="stylesheet" href="assets/index.css" />
     <!-- 添加 Element Plus 图标库 -->
-    <script src="/assets/index.iife.min.js"></script>
+    <script src="assets/index.iife.min.js"></script>
     <style>
       input[type="number"] {
         -webkit-appearance: none;
@@ -49,7 +49,6 @@
         opacity: 1;
       }
 
-      /* 修改这部分，确保按钮悬停时的样式 */
       .round-cell .delete-button:hover {
         opacity: 1 !important;
         color: var(--el-color-danger) !important;
@@ -57,7 +56,7 @@
 
       /* 添加表格行高样式 */
       .el-table__row {
-        height: 54px !important; /* 根据前5行的高度设置你可以调整这个 */
+        height: 54px !important;
       }
 
       /* 确保单元格内容垂直居中 */
@@ -267,11 +266,63 @@
                             value="右侧目标"
                           ></el-option>
                           <el-option
+                            label="再次行动"
+                            value="再次行动"
+                          ></el-option>
+                          <el-option label="等待" value="等待"></el-option>
+                          <el-option
                             label="识别暴击/翻倍（未实装）"
                             value="判断数字"
                           ></el-option>
                         </el-select>
                       </el-form-item>
+                      <template
+                        v-if="selectedExtraActions[row.roundNum] === '再次行动'"
+                      >
+                        <el-form-item style="margin: 0 10px 0 0">
+                          <el-select
+                            v-model="extraActionPosition[row.roundNum]"
+                            placeholder="位置"
+                            size="small"
+                            style="width: 60px"
+                          >
+                            <el-option
+                              v-for="pos in [1,2,3,4,5]"
+                              :key="pos"
+                              :label="pos"
+                              :value="pos"
+                            >
+                            </el-option>
+                          </el-select>
+                        </el-form-item>
+                        <el-form-item style="margin: 0 10px 0 0">
+                          <el-select
+                            v-model="extraActionType[row.roundNum]"
+                            placeholder="动作"
+                            size="small"
+                            style="width: 60px"
+                          >
+                            <el-option label="普攻" value="普"></el-option>
+                            <el-option label="大招" value="大"></el-option>
+                            <el-option label="下拉" value="下"></el-option>
+                          </el-select>
+                        </el-form-item>
+                      </template>
+                      <template
+                        v-if="selectedExtraActions[row.roundNum] === '等待'"
+                      >
+                        <el-form-item style="margin: 0 10px 0 0">
+                          <el-input-number
+                            v-model="waitTime[row.roundNum]"
+                            :min="0"
+                            :max="100000"
+                            placeholder="时间(ms)"
+                            size="small"
+                            style="width: 120px"
+                          >
+                          </el-input-number>
+                        </el-form-item>
+                      </template>
                       <el-form-item style="margin: 0 5px 0 0">
                         <el-button
                           type="warning"
@@ -323,7 +374,7 @@
                       plain
                       @click="extendRound(row.roundNum)"
                     >
-                      再次行动
+                      附加回合
                     </el-button>
                   </div>
                 </div>
@@ -371,50 +422,183 @@
                       </el-tag>
                     </div>
 
-                  <!-- 第二行的添加动作控件 -->
-                  <el-form
-                    v-if="row.actions.length < 10"
-                    :inline="true"
-                    style="margin: 0; display: inline-flex; align-items: center"
-                  >
-                    <el-form-item style="margin: 0 10px 0 0">
-                      <el-select
-                        v-model="selectedPositionsExtended[row.roundNum]"
-                        placeholder="位置"
-                        size="small"
-                        style="width: 70px"
-                      >
-                        <el-option
-                          v-for="pos in getAvailablePositionsExtended(row.actions.slice(row.firstLineActions))"
-                          :key="pos"
-                          :label="pos"
-                          :value="pos"
+                    <!-- 第二行的添加动作控件 -->
+                    <el-form
+                      v-if="row.actions.length < 10"
+                      :inline="true"
+                      style="
+                        margin: 0;
+                        display: inline-flex;
+                        align-items: center;
+                      "
+                    >
+                      <el-form-item style="margin: 0 10px 0 0">
+                        <el-select
+                          v-model="selectedPositionsExtended[row.roundNum]"
+                          placeholder="位置"
+                          size="small"
+                          style="width: 70px"
                         >
-                        </el-option>
-                      </el-select>
-                    </el-form-item>
-                    <el-form-item style="margin: 0 10px 0 0">
-                      <el-select
-                        v-model="selectedActionsExtended[row.roundNum]"
-                        placeholder="动作"
-                        size="small"
-                        style="width: 70px"
+                          <el-option
+                            v-for="pos in getAvailablePositionsExtended(row.actions.slice(row.firstLineActions))"
+                            :key="pos"
+                            :label="pos"
+                            :value="pos"
+                          >
+                          </el-option>
+                        </el-select>
+                      </el-form-item>
+                      <el-form-item style="margin: 0 10px 0 0">
+                        <el-select
+                          v-model="selectedActionsExtended[row.roundNum]"
+                          placeholder="动作"
+                          size="small"
+                          style="width: 70px"
+                        >
+                          <el-option label="普攻" value="普"></el-option>
+                          <el-option label="上拉" value="上"></el-option>
+                          <el-option label="下拉" value="下"></el-option>
+                        </el-select>
+                      </el-form-item>
+                      <el-form-item style="margin: 0">
+                        <el-button
+                          type="primary"
+                          size="small"
+                          @click="addAction(row.roundNum, true)"
+                        >
+                          +动作
+                        </el-button>
+                      </el-form-item>
+                    </el-form>
+                  </div>
+
+                  <!-- 添加右侧控制区域 -->
+                  <div
+                    style="
+                      display: flex;
+                      align-items: center;
+                      gap: 10px;
+                      margin-left: auto;
+                    "
+                  >
+                    <!-- 额外操作添加 -->
+                    <el-form :inline="true" style="margin: 0">
+                      <el-form-item style="margin: 0 10px 0 0">
+                        <el-select
+                          v-model="selectedExtraActionsExtended[row.roundNum]"
+                          placeholder="额外操作"
+                          size="small"
+                          style="width: 120px"
+                        >
+                          <el-option
+                            label="切换至左侧目标"
+                            value="左侧目标"
+                          ></el-option>
+                          <el-option
+                            label="切换至右侧目标"
+                            value="右侧目标"
+                          ></el-option>
+                          <el-option
+                            label="再次行动"
+                            value="再次行动"
+                          ></el-option>
+                          <el-option label="等待" value="等待"></el-option>
+                          <el-option
+                            label="识别暴击/翻倍（未实装）"
+                            value="判断数字"
+                          ></el-option>
+                        </el-select>
+                      </el-form-item>
+                      <template
+                        v-if="selectedExtraActionsExtended[row.roundNum] === '再次行动'"
                       >
-                        <el-option label="普攻" value="普"></el-option>
-                        <el-option label="上拉" value="上"></el-option>
-                        <el-option label="下拉" value="下"></el-option>
-                      </el-select>
-                    </el-form-item>
-                    <el-form-item style="margin: 0">
-                      <el-button
-                        type="primary"
-                        size="small"
-                        @click="addAction(row.roundNum, true)"
+                        <el-form-item style="margin: 0 10px 0 0">
+                          <el-select
+                            v-model="extraActionPosition[row.roundNum]"
+                            placeholder="位置"
+                            size="small"
+                            style="width: 60px"
+                          >
+                            <el-option
+                              v-for="pos in [1,2,3,4,5]"
+                              :key="pos"
+                              :label="pos"
+                              :value="pos"
+                            >
+                            </el-option>
+                          </el-select>
+                        </el-form-item>
+                        <el-form-item style="margin: 0 10px 0 0">
+                          <el-select
+                            v-model="extraActionType[row.roundNum]"
+                            placeholder="动作"
+                            size="small"
+                            style="width: 60px"
+                          >
+                            <el-option label="普攻" value="普"></el-option>
+                            <el-option label="大招" value="大"></el-option>
+                            <el-option label="下拉" value="下"></el-option>
+                          </el-select>
+                        </el-form-item>
+                      </template>
+                      <template
+                        v-if="selectedExtraActionsExtended[row.roundNum] === '等待'"
                       >
-                        添加
-                      </el-button>
-                    </el-form-item>
-                  </el-form>
+                        <el-form-item style="margin: 0 10px 0 0">
+                          <el-input-number
+                            v-model="waitTime[row.roundNum]"
+                            :min="0"
+                            :max="100000"
+                            placeholder="时间(ms)"
+                            size="small"
+                            style="width: 120px"
+                          >
+                          </el-input-number>
+                        </el-form-item>
+                      </template>
+                      <el-form-item style="margin: 0 5px 0 0">
+                        <el-button
+                          type="warning"
+                          size="small"
+                          @click="addExtraAction(row.roundNum, true)"
+                          :disabled="!selectedExtraActionsExtended[row.roundNum]"
+                        >
+                          ＋额外
+                        </el-button>
+                      </el-form-item>
+                    </el-form>
+
+                    <!-- 重开添加 -->
+                    <el-form :inline="true" style="margin: 0">
+                      <el-form-item style="margin: 0 10px 0 0">
+                        <el-select
+                          v-model="selectedRestartExtended[row.roundNum]"
+                          placeholder="重开类型"
+                          size="small"
+                          style="width: 100px"
+                        >
+                          <el-option
+                            label="全灭重开"
+                            value="全灭重开"
+                          ></el-option>
+                          <el-option
+                            label="点左上角重开"
+                            value="点左上角重开"
+                          ></el-option>
+                        </el-select>
+                      </el-form-item>
+                      <el-form-item style="margin: 0">
+                        <el-button
+                          type="danger"
+                          size="small"
+                          @click="addRestart(row.roundNum, true)"
+                          :disabled="!selectedRestartExtended[row.roundNum]"
+                        >
+                          ＋重开
+                        </el-button>
+                      </el-form-item>
+                    </el-form>
+                  </div>
                 </div>
               </div>
             </template>
@@ -623,14 +807,14 @@
     </div>
 
     <!-- 1. 首先加载 Vue -->
-    <script src="/assets/vue.global.prod.min.js"></script>
+    <script src="assets/vue.global.prod.min.js"></script>
 
     <!-- 2. 加载 Element Plus 和图标 -->
-    <script src="/assets/index.full.min.js"></script>
-    <script src="/assets/index.iife.min.js"></script>
+    <script src="assets/index.full.min.js"></script>
+    <script src="assets/index.iife.min.js"></script>
 
     <!-- 3. 加载 Axios -->
-    <script src="/assets/axios.min.js"></script>
+    <script src="assets/axios.min.js"></script>
 
     <!-- 4. 初始化应用的脚本 -->
     <script>
@@ -683,6 +867,9 @@
             const selectedExtraActions = ref({});
             const selectedExtraActionsExtended = ref({});
             const caveType = ref(localStorage.getItem("caveType") || "");
+            const extraActionPosition = ref({});
+            const extraActionType = ref({});
+            const waitTime = ref({});
             const tableData = computed(() => {
               return Object.keys(allActions.value)
                 .map((round) => parseInt(round))
@@ -1033,7 +1220,7 @@
               } catch (error) {
                 console.error("生成循环失败:", error);
                 ElementPlus.ElMessage.error(
-                  error.response?.data?.error || "生成循环失"
+                  error.response?.data?.error || "生成循环失败"
                 );
               }
             };
@@ -1517,6 +1704,27 @@
                   return;
                 }
 
+                // 如果是再次行动，检查位置和动作类型是否已选择
+                if (extraAction === "再次行动") {
+                  const position = extraActionPosition.value[roundNum];
+                  const actionType = extraActionType.value[roundNum];
+
+                  if (!position || !actionType) {
+                    ElementPlus.ElMessage.warning(
+                      "请选择再次行动的位置和动作类型"
+                    );
+                    return;
+                  }
+                }
+
+                if (extraAction === "等待") {
+                  const time = waitTime.value[roundNum];
+                  if (!time && time !== 0) {
+                    ElementPlus.ElMessage.warning("请设置等待时间");
+                    return;
+                  }
+                }
+
                 const currentActions = Array.isArray(allActions.value[roundNum])
                   ? [...allActions.value[roundNum]]
                   : [];
@@ -1528,7 +1736,16 @@
                 );
 
                 // 创建新的额外操作
-                const newAction = [`额外:${extraAction}`];
+                let newAction;
+                if (extraAction === "再次行动") {
+                  const position = extraActionPosition.value[roundNum];
+                  const actionType = extraActionType.value[roundNum];
+                  newAction = [`额外:${position}${actionType}`];
+                } else if (extraAction === "等待") {
+                  newAction = [`额外:等待:${waitTime.value[roundNum]}`];
+                } else {
+                  newAction = [`额外:${extraAction}`];
+                }
 
                 // 根据是否为扩展行决定插入位置
                 const insertIndex = isExtended
@@ -1566,6 +1783,13 @@
                   selectedExtraActionsExtended.value[roundNum] = "";
                 } else {
                   selectedExtraActions.value[roundNum] = "";
+                  if (extraAction === "再次行动") {
+                    extraActionPosition.value[roundNum] = "";
+                    extraActionType.value[roundNum] = "";
+                  }
+                  if (extraAction === "等待") {
+                    waitTime.value[roundNum] = "";
+                  }
                 }
 
                 ElementPlus.ElMessage.success("添加额外操作成功");
@@ -1593,6 +1817,18 @@
 
             watch(difficulty, (newValue) => {
               localStorage.setItem("difficulty", newValue);
+            });
+
+            watch(extraActionPosition, (newValue) => {
+              localStorage.setItem("extraActionPosition", newValue);
+            });
+
+            watch(extraActionType, (newValue) => {
+              localStorage.setItem("extraActionType", newValue);
+            });
+
+            watch(waitTime, (newValue) => {
+              localStorage.setItem("waitTime", newValue);
             });
 
             onMounted(() => {
@@ -1662,6 +1898,9 @@
               getFirstLineActionCount,
               getExtendedLineActionCount,
               caveType,
+              extraActionPosition,
+              extraActionType,
+              waitTime,
             };
           },
         });
