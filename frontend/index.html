@@ -88,17 +88,84 @@
         padding: 4px 0; /* 上下添加一些内边距 */
       }
 
-      /* 添加拓展栏动作的样式 */
-      .el-tag.extended-action {
-        background-color: var(--el-color-success-light-9);
-        border-color: var(--el-color-success-light-7);
-        color: var(--el-color-success);
+      /* 添加动作类型相关的样式 */
+      .el-tag.action-normal {
+        background-color: var(--el-color-primary-light-9);
+        border-color: var(--el-color-primary-light-7);
+        color: var(--el-color-primary);
+      }
+
+      .el-tag.action-ultimate {
+        background-color: #fdf5f3;
+        border-color: #f6cbc8;
+        color: #f0928d;
+      }
+
+      .el-tag.action-swipe {
+        background-color: #ecfcff;
+        border-color: #abe1f5;
+        color: #63addf;
+      }
+
+      .el-tag.action-restart {
+        background-color: var(--el-color-info-light-9);
+        border-color: var(--el-color-info-light-7);
+        color: var(--el-color-info);
+      }
+
+      .el-tag.action-extra {
+        background-color: var(--el-color-warning-light-9);
+        border-color: var(--el-color-warning-light-7);
+        color: var(--el-color-warning);
       }
 
       /* 保持拖拽时的样式一致 */
-      .el-tag.extended-action.dragging {
+      .el-tag.dragging {
         opacity: 0.5;
-        background-color: var(--el-color-success-light-9);
+      }
+      /* 普通动作的删除按钮 */
+      .el-tag.action-normal .el-tag__close {
+        color: var(--el-color-primary);
+      }
+      .el-tag.action-normal .el-tag__close:hover {
+        background-color: var(--el-color-primary);
+        color: #fff;
+      }
+
+      /* 大招动作的删除按钮 */
+      .el-tag.action-ultimate .el-tag__close {
+        color: #f0928d;
+      }
+      .el-tag.action-ultimate .el-tag__close:hover {
+        background-color: #f5a09b;
+        color: #fff;
+      }
+
+      /* 下拉动作的删除按钮 */
+      .el-tag.action-swipe .el-tag__close {
+        color: #06b6d4;
+      }
+      .el-tag.action-swipe .el-tag__close:hover {
+        background-color: #06b6d4;
+        color: #fff;
+      }
+
+      /* 重开动作的删除按钮 */
+      .el-tag.action-restart .el-tag__close {
+        color: var(--el-color-info);
+      }
+      .el-tag.action-restart .el-tag__close:hover {
+        background-color: var(--el-color-info);
+        color: #fff;
+      }
+
+      /* 额外动作的删除按钮 */
+      .el-tag.action-extra .el-tag__close {
+        color: #f97316; /* 使用和标签一样的橙色 */
+      }
+      .el-tag.action-extra .el-tag__close:hover {
+        background-color: #f97316;
+        color: #fff;
       }
     </style>
   </head>
@@ -168,9 +235,14 @@
                         draggable="true"
                         class="draggable"
                         :class="{
-                          'dragging': draggedAction === action &&
-                          dragSourceRound === row.roundNum &&
-                          !dragSourceIsExtended
+                          'dragging': draggedAction === action && dragSourceRound === row.roundNum && !dragSourceIsExtended,
+                          'action-ultimate': action[0].includes('大'),
+                          'action-swipe': action[0].includes('下'),
+                          'action-restart': action[0].startsWith('重开:'),
+                          'action-extra': action[0].startsWith('额外:'),
+                          'action-normal': !action[0].includes('大') && !action[0].includes('下') &&
+                                          !action[0].startsWith('重开:') &&
+                                          !action[0].startsWith('额外:')
                         }"
                         @close="removeAction(row.roundNum, index)"
                         @dragstart="handleDragStart($event, row.roundNum, index, action, false)"
@@ -185,7 +257,7 @@
 
                     <!-- 第一行的添加动作控件 -->
                     <div
-                      v-if="getFirstLineActionCount(row.actions.slice(0, row.firstLineActions)) < (row.isExtended ? 4 : 5)"
+                      v-if="getFirstLineActionCount(row.actions.slice(0, row.firstLineActions)) < 5"
                     >
                       <el-form :inline="true" style="margin: 0">
                         <el-form-item style="margin: 0 10px 0 0">
@@ -407,9 +479,14 @@
                         draggable="true"
                         class="draggable extended-action"
                         :class="{
-                          'dragging': draggedAction === action &&
-                          dragSourceRound === row.roundNum &&
-                          dragSourceIsExtended
+                          'dragging': draggedAction === action && dragSourceRound === row.roundNum && dragSourceIsExtended,
+                          'action-ultimate': action[0].includes('大'),
+                          'action-swipe': action[0].includes('下'),
+                          'action-restart': action[0].startsWith('重开:'),
+                          'action-extra': action[0].startsWith('额外:'),
+                          'action-normal': !action[0].includes('大') && !action[0].includes('下') &&
+                                          !action[0].startsWith('重开:') &&
+                                          !action[0].startsWith('额外:')
                         }"
                         @close="removeAction(row.roundNum, index + row.firstLineActions)"
                         @dragstart="handleDragStart($event, row.roundNum, index + row.firstLineActions, action, true)"
@@ -456,7 +533,7 @@
                           style="width: 70px"
                         >
                           <el-option label="普攻" value="普"></el-option>
-                          <el-option label="上拉" value="上"></el-option>
+                          <el-option label="大招" value="大"></el-option>
                           <el-option label="下拉" value="下"></el-option>
                         </el-select>
                       </el-form-item>

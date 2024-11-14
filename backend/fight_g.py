@@ -298,6 +298,14 @@ def reverse_config(config_data):
                 action_code = "额外:左侧目标"
             elif begin[0] == 406 and end[0] == 207:  # 右侧目标
                 action_code = "额外:右侧目标"
+            # 检查是否是大招或下拉
+            if value.get('action') == 'Swipe':
+                end_y = value.get('end', [0, 0, 0, 0])[1]
+                begin_y = value.get('begin', [0, 0, 0, 0])[1]
+                action_type = '大' if end_y < begin_y else '下'
+                x = value.get('begin', [0, 0, 0, 0])[0]
+                position = '1' if x < 100 else '2' if x < 250 else '3' if x < 400 else '4' if x < 550 else '5'
+                action_code = f"{position}{action_type}"
         elif value.get('action') == 'Click':
             # 从目标坐标判断位置号
             target = value.get('target', [0, 0, 0, 0])
