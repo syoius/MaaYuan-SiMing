@@ -20,7 +20,7 @@ def get_template_path():
     else:
         return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates', 'fight_action.json')
 
-def generate_config(input_path, output_path, level_type='', level_recognition_name='', difficulty=''):
+def generate_config(input_path, output_path, level_type='', level_recognition_name='', difficulty='', cave_type=''):
     """生成配置文件"""
     try:
         # 读取输入配置
@@ -53,7 +53,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                 "expected": f"回合{round_num}",
                 "roi": [585, 28, 90, 65],
                 "next": [f"回合{round_num}行动1"],
-                "post_delay": 1000,
+                "post_delay": 2000,
             }
 
             # 处理每个回合中的动作
@@ -66,7 +66,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                     if action.startswith('额外:'):
                         extra_action_type = action.split(':')[1]
                         extra_action_key = f"回合{round_num}行动{i}"
-                        
+
                         # 配置额外操作
                         if extra_action_type == "左侧目标":
                             result_config[extra_action_key] = {
@@ -109,12 +109,12 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                         if action_config:
                             action_key = f"回合{round_num}行动{i}"
                             result_config[action_key] = action_config.copy()
-                            
+
                             if current_action_key:
                                 result_config[current_action_key]["next"] = [action_key]
-                            
+
                             current_action_key = action_key
-                            
+
                             # 如果是当前回合的最后一个动作，设置next指向下一回合
                             if i == len(actions) and int(round_num) < max_round_num:
                                 result_config[action_key]["next"] = [f"检测回合{int(round_num)+1}"]
@@ -123,9 +123,11 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
         if level_type == '主线':
             next_node = "抄作业找到关卡-主线"
         elif level_type == '洞窟':
-            next_node = "抄作业找到关卡-洞窟"
+            next_node = "抄作业进入关卡-洞窟"
         elif level_type == '活动有分级':
             next_node = "抄作业找到关卡-活动分级"
+        elif level_type == '白鹄':
+            next_node = "抄作业进入关卡-白鹄"
         else:
             next_node = "抄作业找到关卡-OCR"
 
@@ -144,16 +146,30 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
 
         # 根据关卡类别和识别名称设置对应的导航节点
         if level_type == '洞窟':
-            result_config["抄作业找到关卡-洞窟"] = {
-                "recognition": "OCR",
-                "expected": level_recognition_name,  # 使用传入的识别名称
-                "roi": [0,249,720,1030],
-                "action": "Click",
-                "target_offset": [-27, 443, -22, -69],
-                "pre_delay": 1500,
-                "next": ["抄作业战斗开始"],
-                "timeout": 20000
-            }
+            if cave_type == '左':
+                result_config["抄作业进入关卡-洞窟"] = {
+                    "text_doc": "左",
+                    "recognition": "OCR",
+                    "expected": "前往",
+                    "roi" : [237,810,82,89],
+                    "action": "Click",
+                    "target": [258,833,42,39],
+                    "pre_delay": 1500,
+                    "next": ["抄作业战斗开始"],
+                    "timeout": 20000
+                }
+            else:
+                result_config["抄作业进入关卡-洞窟"] = {
+                    "text_doc": "右",
+                    "recognition": "OCR",
+                    "expected": "前往",
+                    "roi" : [558,804,79,89],
+                    "action": "Click",
+                    "target": [581,832,41,41],
+                    "pre_delay": 1500,
+                    "next": ["抄作业战斗开始"],
+                    "timeout": 20000
+                }
         elif level_type == '活动有分级':
             result_config["抄作业找到关卡-活动分级"] = {
                 "recognition": "OCR",
@@ -173,7 +189,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                 "next": ["抄作业进入关卡"],
                 "timeout": 20000
             }
-        elif level_type != '主线':  # 非主线且非洞窟的情况
+        elif level_type != '主线' and level_type != '白鹄':  # 其他的情况
             result_config["抄作业找到关卡-OCR"] = {
                 "recognition": "OCR",
                 "expected": level_recognition_name,  # 使用传入的识别名称
@@ -201,7 +217,8 @@ def reverse_config(config_data):
     config_info = {
         'level_type': '',
         'level_recognition_name': '',
-        'difficulty': ''
+        'difficulty': '',
+        'cave_type': ''
     }
 
     # 检测关卡类型和识别名称
@@ -212,14 +229,15 @@ def reverse_config(config_data):
         next_node = next_nodes[1]  # 获取第二个节点
         if next_node == "抄作业找到关卡-主线":
             config_info['level_type'] = '主线'
-        elif next_node == "抄作业找到关卡-洞窟":
+        elif next_node == "抄作业进入关卡-洞窟":
             config_info['level_type'] = '洞窟'
-            config_info['level_recognition_name'] = config_data.get("抄作业找到关卡-洞窟", {}).get("expected", "")
+            config_info['cave_type'] = config_data.get("抄作业进入关卡-洞窟", {}).get("text_doc", "")
         elif next_node == "抄作业找到关卡-活动分级":
             config_info['level_type'] = '活动有分级'
             config_info['level_recognition_name'] = config_data.get("抄作业找到关卡-活动分级", {}).get("expected", "")
-            # 获取难度信息
             config_info['difficulty'] = config_data.get("抄作业选择活动分级", {}).get("expected", "")
+        elif next_node == "抄作业进入关卡-白鹄":
+            config_info['level_type'] = '白鹄'
         elif next_node == "抄作业找到关卡-OCR":
             config_info['level_type'] = '其他'
             config_info['level_recognition_name'] = config_data.get("抄作业找到关卡-OCR", {}).get("expected", "")
@@ -309,5 +327,6 @@ if __name__ == '__main__':
     level_type = sys.argv[3] if len(sys.argv) > 3 else ''
     level_recognition_name = sys.argv[4] if len(sys.argv) > 4 else ''
     difficulty = sys.argv[5] if len(sys.argv) > 5 else ''
+    cave_type = sys.argv[6] if len(sys.argv) > 6 else ''
 
-    generate_config(input_path, output_path, level_type, level_recognition_name, difficulty)
+    generate_config(input_path, output_path, level_type, level_recognition_name, difficulty, cave_type)

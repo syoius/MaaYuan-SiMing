@@ -173,6 +173,7 @@ def export_config():
         level_type = request.args.get('level_type', '')
         level_recognition_name = request.args.get('level_recognition_name', '')
         difficulty = request.args.get('difficulty', '')  # 获取难度参数
+        cave_type = request.args.get('cave_type', '')  # 获取洞窟类型参数
 
         if getattr(sys, 'frozen', False):
             # 打包环境
@@ -194,13 +195,13 @@ def export_config():
 
         if getattr(sys, 'frozen', False):
             # 打包环境的处理逻辑
-            fight_g.generate_config(temp_config_path, config_path, level_type, level_recognition_name, difficulty)
+            fight_g.generate_config(temp_config_path, config_path, level_type, level_recognition_name, difficulty, cave_type)
         else:
             # 开发环境下运行脚本
             python_executable = sys.executable
             result = subprocess.run(
-                [python_executable, script_path, temp_config_path, config_path, 
-                 level_type, level_recognition_name, difficulty],  # 添加难度参数
+                [python_executable, script_path, temp_config_path, config_path,
+                 level_type, level_recognition_name, difficulty, cave_type],  # 添加难度参数
                 capture_output=True,
                 text=True,
                 cwd=os.path.dirname(script_path)

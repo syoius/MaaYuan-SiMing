@@ -371,128 +371,50 @@
                       </el-tag>
                     </div>
 
-                    <!-- 第二行的添加动作控件 -->
-                    <div
-                      v-if="getExtendedLineActionCount(row.actions.slice(row.firstLineActions)) < 5"
-                    >
-                      <el-form :inline="true" style="margin: 0">
-                        <el-form-item style="margin: 0 10px 0 0">
-                          <el-select
-                            v-model="selectedPositionsExtended[row.roundNum]"
-                            placeholder="位置"
-                            size="small"
-                            style="width: 60px"
-                          >
-                            <el-option
-                              v-for="pos in getAvailablePositionsExtended(row.actions.slice(row.firstLineActions))"
-                              :key="pos"
-                              :label="pos"
-                              :value="pos"
-                            >
-                            </el-option>
-                          </el-select>
-                        </el-form-item>
-                        <el-form-item style="margin: 0 10px 0 0">
-                          <el-select
-                            v-model="selectedActionsExtended[row.roundNum]"
-                            placeholder="动作"
-                            size="small"
-                            style="width: 60px"
-                          >
-                            <el-option label="普攻" value="普"></el-option>
-                            <el-option label="大招" value="大"></el-option>
-                            <el-option label="下拉" value="下"></el-option>
-                          </el-select>
-                        </el-form-item>
-                        <el-form-item style="margin: 0">
-                          <el-button
-                            type="success"
-                            size="small"
-                            @click="addAction(row.roundNum, true)"
-                          >
-                            +行动
-                          </el-button>
-                        </el-form-item>
-                      </el-form>
-                    </div>
-                  </div>
-
-                  <!-- 右侧：额外操作和重开按钮 -->
-                  <div
-                    style="
-                      display: flex;
-                      align-items: center;
-                      gap: 10px;
-                      margin-left: auto;
-                      margin-right: 0;
-                    "
+                  <!-- 第二行的添加动作控件 -->
+                  <el-form
+                    v-if="row.actions.length < 10"
+                    :inline="true"
+                    style="margin: 0; display: inline-flex; align-items: center"
                   >
-                    <!-- 额外操作添加 -->
-                    <el-form :inline="true" style="margin: 0">
-                      <el-form-item style="margin: 0 10px 0 0">
-                        <el-select
-                          v-model="selectedExtraActionsExtended[row.roundNum]"
-                          placeholder="额外操作"
-                          size="small"
-                          style="width: 120px"
+                    <el-form-item style="margin: 0 10px 0 0">
+                      <el-select
+                        v-model="selectedPositionsExtended[row.roundNum]"
+                        placeholder="位置"
+                        size="small"
+                        style="width: 70px"
+                      >
+                        <el-option
+                          v-for="pos in getAvailablePositionsExtended(row.actions.slice(row.firstLineActions))"
+                          :key="pos"
+                          :label="pos"
+                          :value="pos"
                         >
-                          <el-option
-                            label="切换至左侧目标"
-                            value="左侧目标"
-                          ></el-option>
-                          <el-option
-                            label="切换至右侧目标"
-                            value="右侧目标"
-                          ></el-option>
-                          <el-option
-                            label="识别暴击/翻倍（未实装）"
-                            value="判断数字"
-                          ></el-option>
-                        </el-select>
-                      </el-form-item>
-                      <el-form-item style="margin: 0 5px 0 0">
-                        <el-button
-                          type="warning"
-                          size="small"
-                          @click="addExtraAction(row.roundNum, true)"
-                          :disabled="!selectedExtraActionsExtended[row.roundNum]"
-                        >
-                          ＋额外
-                        </el-button>
-                      </el-form-item>
-                    </el-form>
-
-                    <!-- 重开添加 -->
-                    <el-form :inline="true" style="margin: 0">
-                      <el-form-item style="margin: 0 10px 0 0">
-                        <el-select
-                          v-model="selectedRestartExtended[row.roundNum]"
-                          placeholder="重开类型"
-                          size="small"
-                          style="width: 100px"
-                        >
-                          <el-option
-                            label="全灭重开"
-                            value="全灭重开"
-                          ></el-option>
-                          <el-option
-                            label="点左上角重开"
-                            value="点左上角重开"
-                          ></el-option>
-                        </el-select>
-                      </el-form-item>
-                      <el-form-item style="margin: 0">
-                        <el-button
-                          type="danger"
-                          size="small"
-                          @click="addRestart(row.roundNum, true)"
-                          :disabled="!selectedRestartExtended[row.roundNum]"
-                        >
-                          ＋重开
-                        </el-button>
-                      </el-form-item>
-                    </el-form>
-                  </div>
+                        </el-option>
+                      </el-select>
+                    </el-form-item>
+                    <el-form-item style="margin: 0 10px 0 0">
+                      <el-select
+                        v-model="selectedActionsExtended[row.roundNum]"
+                        placeholder="动作"
+                        size="small"
+                        style="width: 70px"
+                      >
+                        <el-option label="普攻" value="普"></el-option>
+                        <el-option label="上拉" value="上"></el-option>
+                        <el-option label="下拉" value="下"></el-option>
+                      </el-select>
+                    </el-form-item>
+                    <el-form-item style="margin: 0">
+                      <el-button
+                        type="primary"
+                        size="small"
+                        @click="addAction(row.roundNum, true)"
+                      >
+                        添加
+                      </el-button>
+                    </el-form-item>
+                  </el-form>
                 </div>
               </div>
             </template>
@@ -565,6 +487,7 @@
                     >
                       <el-option label="主线" value="主线"></el-option>
                       <el-option label="洞窟" value="洞窟"></el-option>
+                      <el-option label="白鹄行动" value="白鹄"></el-option>
                       <el-option
                         label="活动-有难度分级"
                         value="活动有分级"
@@ -574,7 +497,10 @@
                   </el-form-item>
 
                   <!-- 添加关卡名称（识别用）输入框 -->
-                  <el-form-item style="margin-bottom: 0">
+                  <el-form-item
+                    v-if="levelType !== '白鹄' && levelType !== '主线' && levelType !== '洞窟'"
+                    style="margin-bottom: 0"
+                  >
                     <el-input
                       v-model="levelRecognitionName"
                       placeholder="关卡序号/名"
@@ -598,6 +524,22 @@
                     </el-input>
                   </el-form-item>
                 </el-form>
+
+                <!-- 添加洞窟关卡选择，仅在选择洞窟时显示 -->
+                <el-form-item
+                  v-if="levelType === '洞窟'"
+                  style="margin-bottom: 0"
+                >
+                  <el-select
+                    v-model="caveType"
+                    placeholder="洞窟关卡"
+                    style="width: 100px"
+                    size="default"
+                  >
+                    <el-option label="洞窟-左" value="左"></el-option>
+                    <el-option label="洞窟-右" value="右"></el-option>
+                  </el-select>
+                </el-form-item>
 
                 <div style="font-size: 12px; color: #909399; margin-left: 20px">
                   使用"点左上角重开"时，必填关卡类别和关卡序号（识别关卡入口用）<br />
@@ -740,7 +682,7 @@
             const difficulty = ref(localStorage.getItem("difficulty") || "");
             const selectedExtraActions = ref({});
             const selectedExtraActionsExtended = ref({});
-
+            const caveType = ref(localStorage.getItem("caveType") || "");
             const tableData = computed(() => {
               return Object.keys(allActions.value)
                 .map((round) => parseInt(round))
@@ -1160,8 +1102,16 @@
                   ElementPlus.ElMessage.warning("请选择关卡类别");
                   return;
                 }
-                if (!levelRecognitionName.value.trim()) {
+                if (
+                  (levelType.value === "活动有分级" ||
+                    levelType.value === "其他") &&
+                  !levelRecognitionName.value.trim()
+                ) {
                   ElementPlus.ElMessage.warning("请输入关卡名称（识别用）");
+                  return;
+                }
+                if (levelType.value === "洞窟" && !caveType.value.trim()) {
+                  ElementPlus.ElMessage.warning("请选择洞窟类型");
                   return;
                 }
                 if (
@@ -1179,6 +1129,7 @@
                     level_type: levelType.value,
                     level_recognition_name: levelRecognitionName.value,
                     difficulty: difficulty.value,
+                    cave_type: caveType.value,
                   },
                 });
 
@@ -1239,11 +1190,13 @@
                 localStorage.removeItem("levelType");
                 localStorage.removeItem("levelRecognitionName");
                 localStorage.removeItem("levelName");
+                localStorage.removeItem("caveType");
 
                 // 清空响应式变量
                 levelType.value = "";
                 levelRecognitionName.value = "";
                 levelName.value = "";
+                caveType.value = "";
 
                 ElementPlus.ElMessage.success("动作已清空");
               } catch (error) {
@@ -1291,6 +1244,7 @@
                       levelRecognitionName.value =
                         response.data.config_info.level_recognition_name;
                       difficulty.value = response.data.config_info.difficulty;
+                      caveType.value = response.data.config_info.cave_type;
                     }
 
                     ElementPlus.ElMessage.success("导入成功");
@@ -1633,6 +1587,10 @@
               localStorage.setItem("levelName", newValue);
             });
 
+            watch(caveType, (newValue) => {
+              localStorage.setItem("caveType", newValue);
+            });
+
             watch(difficulty, (newValue) => {
               localStorage.setItem("difficulty", newValue);
             });
@@ -1703,6 +1661,7 @@
               addExtraAction,
               getFirstLineActionCount,
               getExtendedLineActionCount,
+              caveType,
             };
           },
         });
