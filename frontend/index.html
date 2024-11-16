@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Maa鸢/司命 - 勘天刻命</title>
     <!-- Element Plus 的样式 -->
-    <link rel="stylesheet" href="assets/index.css" />
+    <link rel="stylesheet" href="/assets/index.css" />
     <!-- 添加 Element Plus 图标库 -->
-    <script src="assets/index.iife.min.js"></script>
+    <script src="/assets/index.iife.min.js"></script>
     <style>
       input[type="number"] {
         -webkit-appearance: none;
@@ -501,7 +501,7 @@
 
                     <!-- 第二行的添加动作控件 -->
                     <el-form
-                      v-if="row.actions.length < 10"
+                      v-if="getAvailablePositionsExtended(row.actions.slice(row.firstLineActions)).length > 0"
                       :inline="true"
                       style="
                         margin: 0;
@@ -543,7 +543,7 @@
                           size="small"
                           @click="addAction(row.roundNum, true)"
                         >
-                          +动作
+                          +行动
                         </el-button>
                       </el-form-item>
                     </el-form>
@@ -884,14 +884,14 @@
     </div>
 
     <!-- 1. 首先加载 Vue -->
-    <script src="assets/vue.global.prod.min.js"></script>
+    <script src="/assets/vue.global.prod.min.js"></script>
 
     <!-- 2. 加载 Element Plus 和图标 -->
-    <script src="assets/index.full.min.js"></script>
-    <script src="assets/index.iife.min.js"></script>
+    <script src="/assets/index.full.min.js"></script>
+    <script src="/assets/index.iife.min.js"></script>
 
     <!-- 3. 加载 Axios -->
-    <script src="assets/axios.min.js"></script>
+    <script src="/assets/axios.min.js"></script>
 
     <!-- 4. 初始化应用的脚本 -->
     <script>
