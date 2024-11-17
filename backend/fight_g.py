@@ -62,14 +62,12 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                 # 检查是否是额外操作
                 if isinstance(action_group, list) and len(action_group) > 0:
                     action = action_group[0]  # 第一个元素是动作
-
                     if action.startswith('额外:'):
                         extra_action_type = action.split(':')[1]
                         extra_action_key = f"回合{round_num}行动{i}"
-
-                        # 配置额外操作
                         if extra_action_type == "左侧目标":
                             result_config[extra_action_key] = {
+                                "text_doc": "左侧目标",
                                 "action": "Swipe",
                                 "begin": [207, 745, 1, 1],
                                 "end": [406, 745, 1, 1],
@@ -78,15 +76,30 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                             }
                         elif extra_action_type == "右侧目标":
                             result_config[extra_action_key] = {
+                                "text_doc": "右侧目标",
                                 "action": "Swipe",
                                 "begin": [406, 745, 1, 1],
                                 "end": [207, 745, 1, 1],
                                 "post_delay": 2000,
                                 "duration": 800
                             }
+                        elif extra_action_type == "等待":
+                            wait_time = int(action.split(':')[2])
+                            result_config[extra_action_key] = {
+                                "text_doc": "等待",
+                                "post_delay": wait_time
+                            }
                         # elif extra_action_type == "判断数字":
                         #     result_config[extra_action_key] = {
                         #     }
+                        else:
+                            # 解析再次行动的位置和动作类型
+                            _, action_code = action.split(':')  # 格式为 "额外:1普"
+                            action_config = get_action(action_code)
+                            if action_config:
+                                result_config[extra_action_key] = action_config.copy()
+                            result_config[extra_action_key]["text_doc"] = "再动"+action_code
+
 
                         # 设置前一个动作的next为当前额外操作
                         if current_action_key:
@@ -109,6 +122,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                         if action_config:
                             action_key = f"回合{round_num}行动{i}"
                             result_config[action_key] = action_config.copy()
+                            result_config[action_key]["text_doc"] = action
 
                             if current_action_key:
                                 result_config[current_action_key]["next"] = [action_key]
@@ -244,7 +258,7 @@ def reverse_config(config_data):
 
     # 创建一个临时字典来存储每个回合的动作
     temp_actions = {}
-    
+
     # 首先按回合号分组处理所有动作
     for key, value in config_data.items():
         # 跳过检测回合配置和其他非动作配置
@@ -253,7 +267,7 @@ def reverse_config(config_data):
 
         # 从键名中提取回合号和动作序号
         parts = key.split('回合')[1].split('行动')
-        round_num = parts[0]  # 基础回合号（如 "2" 或 "2额外2"）
+        round_num = parts[0]  # 基础回合号（如 "2"）
         action_num = int(parts[1]) if len(parts) > 1 else 0
 
         # 确保回合存在于临时字典中
@@ -262,23 +276,39 @@ def reverse_config(config_data):
 
         # 解析动作类型
         action_code = None
-        
         # 检查是否是额外操作
-        if value.get('action') == 'Swipe':
+        if value.get('text_doc').startswith("再动"):
+            # 处理再次行动
+            # 根据动作类型判断是普攻、大招还是下拉
+            if value.get('action') == 'Click':
+                action_type = '普'
+                x = value.get('target', [0, 0, 0, 0])[0]
+                position = '1' if x < 100 else '2' if x < 250 else '3' if x < 400 else '4' if x < 550 else '5'
+            else:  # Swipe action
+                end_y = value.get('end', [0, 0, 0, 0])[1]
+                begin_y = value.get('begin', [0, 0, 0, 0])[1]
+                action_type = '大' if end_y < begin_y else '下'
+                x = value.get('begin', [0, 0, 0, 0])[0]
+                position = '1' if x < 100 else '2' if x < 250 else '3' if x < 400 else '4' if x < 550 else '5'
+            action_code = f"额外:{position}{action_type}"
+        elif value.get('text_doc') == "等待":
+            action_code = f"额外:等待:{value.get('post_delay')}"
+        elif value.get('action') == 'Swipe':
             begin = value.get('begin', [0, 0, 0, 0])
             end = value.get('end', [0, 0, 0, 0])
-            
             # 检查是否是目标切换操作
             if begin[0] == 207 and end[0] == 406:  # 左侧目标
                 action_code = "额外:左侧目标"
             elif begin[0] == 406 and end[0] == 207:  # 右侧目标
                 action_code = "额外:右侧目标"
-            else:
-                # 普通上下拉动作
-                x = begin[0]
+            # 检查是否是大招或下拉
+            if value.get('action') == 'Swipe':
+                end_y = value.get('end', [0, 0, 0, 0])[1]
+                begin_y = value.get('begin', [0, 0, 0, 0])[1]
+                action_type = '大' if end_y < begin_y else '下'
+                x = value.get('begin', [0, 0, 0, 0])[0]
                 position = '1' if x < 100 else '2' if x < 250 else '3' if x < 400 else '4' if x < 550 else '5'
-                action_code = f"{position}{'上' if end[1] < begin[1] else '下'}"
-        
+                action_code = f"{position}{action_type}"
         elif value.get('action') == 'Click':
             # 从目标坐标判断位置号
             target = value.get('target', [0, 0, 0, 0])
@@ -287,7 +317,6 @@ def reverse_config(config_data):
             action_code = f"{position}普"
 
         # 检查下一个动作是否是重开
-        next_actions = value.get('next', [])
         if action_code:
             # 将动作和序号一起存储
             temp_actions[round_num].append((action_num, [action_code]))
@@ -306,7 +335,6 @@ def reverse_config(config_data):
         base_round = round_num.split('额外')[0]
         if base_round not in round_actions:
             round_actions[base_round] = []
-        
         # 按动作序号排序并添加到结果中
         sorted_actions = sorted(actions, key=lambda x: x[0])
         for _, action in sorted_actions:
