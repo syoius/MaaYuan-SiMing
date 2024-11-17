@@ -1098,13 +1098,6 @@
                   let firstLineRegularActions =
                     currentState.firstLineRegularActions || 0;
 
-                  if (currentState.isExtended && firstLineRegularActions >= 4) {
-                    ElementPlus.ElMessage.warning(
-                      "扩展栏激活时第一行最多只能有4个常规动作"
-                    );
-                    return;
-                  }
-
                   firstLineRegularActions += 1;
                   currentState.firstLineRegularActions =
                     firstLineRegularActions;

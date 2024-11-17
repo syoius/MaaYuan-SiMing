@@ -98,7 +98,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                             action_config = get_action(action_code)
                             if action_config:
                                 result_config[extra_action_key] = action_config.copy()
-                            result_config[extra_action_key]["text_doc"] = "再动"
+                            result_config[extra_action_key]["text_doc"] = "再动"+action_code
 
 
                         # 设置前一个动作的next为当前额外操作
@@ -277,7 +277,7 @@ def reverse_config(config_data):
         # 解析动作类型
         action_code = None
         # 检查是否是额外操作
-        if value.get('text_doc') == "再动":
+        if value.get('text_doc').startswith("再动"):
             # 处理再次行动
             # 根据动作类型判断是普攻、大招还是下拉
             if value.get('action') == 'Click':
