@@ -52,6 +52,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                 "recognition": "OCR",
                 "expected": f"回合{round_num}",
                 "roi": [585, 28, 90, 65],
+                "text_doc": f"回合{round_num}",
                 "next": [f"回合{round_num}行动1"],
                 "post_delay": 2000,
             }
@@ -129,9 +130,15 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
 
                             current_action_key = action_key
 
-                            # 如果是当前回合的最后一个动作，设置next指向下一回合
+                            # 如果是当前回合的最后一个动作
                             if i == len(actions) and int(round_num) < max_round_num:
-                                result_config[action_key]["next"] = [f"检测回合{int(round_num)+1}"]
+                                if level_type == '洞窟':
+                                    # 为洞窟关卡的最后一个动作添加“胜利后重开”
+                                    result_config[action_key]["next"] = ["抄作业战斗胜利", f"检测回合{int(round_num)+1}"]
+                                else:
+                                    result_config[action_key]["next"] = [f"检测回合{int(round_num)+1}"]
+                            else:
+                                result_config[action_key]["next"] = ["抄作业战斗胜利"]
 
         # 根据关卡类别设置重开后的导航节点
         if level_type == '主线':
@@ -277,7 +284,7 @@ def reverse_config(config_data):
         # 解析动作类型
         action_code = None
         # 检查是否是额外操作
-        if value.get('text_doc').startswith("再动"):
+        if (value.get('text_doc') and value.get('text_doc').startswith("再动")):
             # 处理再次行动
             # 根据动作类型判断是普攻、大招还是下拉
             if value.get('action') == 'Click':
