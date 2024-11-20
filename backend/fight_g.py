@@ -69,18 +69,16 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                         if extra_action_type == "左侧目标":
                             result_config[extra_action_key] = {
                                 "text_doc": "左侧目标",
-                                "action": "Swipe",
-                                "begin": [207, 745, 1, 1],
-                                "end": [406, 745, 1, 1],
+                                "action": "Click",
+                                "target": [154, 648, 1, 1],
                                 "post_delay": 2000,
                                 "duration": 800
                             }
                         elif extra_action_type == "右侧目标":
                             result_config[extra_action_key] = {
                                 "text_doc": "右侧目标",
-                                "action": "Swipe",
-                                "begin": [406, 745, 1, 1],
-                                "end": [207, 745, 1, 1],
+                                "action": "Click",
+                                "target": [603,413,18,21],
                                 "post_delay": 2000,
                                 "duration": 800
                             }
@@ -298,16 +296,15 @@ def reverse_config(config_data):
                 x = value.get('begin', [0, 0, 0, 0])[0]
                 position = '1' if x < 100 else '2' if x < 250 else '3' if x < 400 else '4' if x < 550 else '5'
             action_code = f"额外:{position}{action_type}"
+        elif value.get('text_doc') == "左侧目标":
+            action_code = "额外:左侧目标"
+        elif value.get('text_doc') == "右侧目标":
+            action_code = "额外:右侧目标"
         elif value.get('text_doc') == "等待":
             action_code = f"额外:等待:{value.get('post_delay')}"
         elif value.get('action') == 'Swipe':
             begin = value.get('begin', [0, 0, 0, 0])
             end = value.get('end', [0, 0, 0, 0])
-            # 检查是否是目标切换操作
-            if begin[0] == 207 and end[0] == 406:  # 左侧目标
-                action_code = "额外:左侧目标"
-            elif begin[0] == 406 and end[0] == 207:  # 右侧目标
-                action_code = "额外:右侧目标"
             # 检查是否是大招或下拉
             if value.get('action') == 'Swipe':
                 end_y = value.get('end', [0, 0, 0, 0])[1]
