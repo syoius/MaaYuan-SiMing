@@ -212,10 +212,10 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
             result_config["抄作业找到关卡-OCR"] = {
                 "recognition": "OCR",
                 "expected": level_recognition_name,  # 使用传入的识别名称
-                "roi": [0,249,720,1030],
+                "roi": [0,297,720,1030],
                 "action": "Click",
                 "pre_delay": 2000,
-                "next": ["指定抄作业战斗队伍","抄作业战斗开始"],
+                "next": ["抄作业进入关卡"],
                 "timeout": 20000
             }
 
