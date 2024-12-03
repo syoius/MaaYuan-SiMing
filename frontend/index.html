@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Maa鸢/司命 - 勘天刻命</title>
+    <!-- 添加网站图标 -->
+    <link rel="icon" href="assets/icon.ico" type="image/x-icon" />
     <!-- Element Plus 的样式 -->
     <link rel="stylesheet" href="assets/index.css" />
     <!-- 添加 Element Plus 图标库 -->
@@ -918,9 +920,48 @@
     <script>
       function initApp() {
         const { createApp, ref, onMounted, computed, watch } = Vue;
+        const API_BASE_URL = "http://192.210.190.143:49481/api";
 
-        // 根据当前域名判断使用哪个 API 地址
-        const API_BASE_URL = "http://127.0.0.1:49481/api"; // 固定使用本地地址
+        // 添加 LocalStorage 相关的工具函数
+        const Storage = {
+          // 生成用户唯一标识
+          getUserId() {
+            let userId = localStorage.getItem("maa_user_id");
+            if (!userId) {
+              userId = "user_" + Math.random().toString(36).substr(2, 9);
+              localStorage.setItem("maa_user_id", userId);
+            }
+            return userId;
+          },
+
+          // 获取用户特定的键
+          getKey(key) {
+            const userId = this.getUserId();
+            return `${userId}_${key}`;
+          },
+
+          // 保存数据
+          save(key, value) {
+            const userKey = this.getKey(key);
+            localStorage.setItem(userKey, JSON.stringify(value));
+          },
+
+          // 读取数据
+          load(key) {
+            const userKey = this.getKey(key);
+            const data = localStorage.getItem(userKey);
+            return data ? JSON.parse(data) : null;
+          },
+
+          // 添加清除特定用户所有数据的方法
+          clearUserData() {
+            const userId = this.getUserId();
+            const keys = Object.keys(localStorage).filter((key) =>
+              key.startsWith(userId)
+            );
+            keys.forEach((key) => localStorage.removeItem(key));
+          },
+        };
 
         const app = createApp({
           setup() {
@@ -1034,40 +1075,12 @@
               };
             };
 
-            const loadAllActions = async () => {
-              try {
-                const response = await axios.get(
-                  "http://127.0.0.1:5000/api/actions"
-                );
-                const actions = response.data;
-
-                // 确保每个回合的动作都是数组
-                Object.keys(actions).forEach((roundNum) => {
-                  const currentActions = Array.isArray(actions[roundNum])
-                    ? [...actions[roundNum]]
-                    : [];
-
-                  // 从 localStorage 加载状态
-                  const state = loadStateFromLocalStorage(
-                    roundNum,
-                    currentActions.length
-                  );
-
-                  // 重新赋值，保持扩展状态
-                  actions[roundNum] = currentActions;
-                  actions[roundNum].isExtended = state.isExtended;
-                  actions[roundNum].firstLineActions = state.firstLineActions;
-                  actions[roundNum].firstLineRegularActions =
-                    state.firstLineRegularActions;
-                });
-
-                allActions.value = actions;
-              } catch (error) {
-                console.error("加载动作失败:", error);
-              }
+            const loadAllActions = () => {
+              const savedActions = Storage.load("actions") || {};
+              allActions.value = savedActions;
             };
 
-            const addAction = async (roundNum, isExtended) => {
+            const addAction = (roundNum, isExtended) => {
               try {
                 // 根据是否为扩展行选择对应的值
                 const position = isExtended
@@ -1097,7 +1110,6 @@
                 if (!isExtended) {
                   let firstLineRegularActions =
                     currentState.firstLineRegularActions || 0;
-
                   firstLineRegularActions += 1;
                   currentState.firstLineRegularActions =
                     firstLineRegularActions;
@@ -1119,13 +1131,6 @@
                     (currentState.firstLineActions || 0) + 1;
                 }
 
-                // 更新后端
-                await axios.put(
-                  `${API_BASE_URL}/actions/${roundNum}`,
-                  currentActions
-                );
-
-                // 更新前端状态
                 allActions.value[roundNum] = currentActions;
                 allActions.value[roundNum].isExtended =
                   currentState.isExtended || false;
@@ -1134,13 +1139,8 @@
                 allActions.value[roundNum].firstLineRegularActions =
                   currentState.firstLineRegularActions;
 
-                // 保存新状态到localStorage
-                saveStateToLocalStorage(
-                  roundNum,
-                  currentState.isExtended,
-                  currentState.firstLineActions,
-                  currentState.firstLineRegularActions
-                );
+                // 保存到 LocalStorage
+                Storage.save("actions", allActions.value);
 
                 // 重置选择
                 if (isExtended) {
@@ -1158,57 +1158,49 @@
               }
             };
 
-            const removeAction = async (roundNum, index) => {
-              const round = allActions.value[roundNum];
-              if (!round) return;
-
-              const firstLineActions = round.firstLineActions || round.length;
-              const isFirstLine = index < firstLineActions;
-
-              const currentState = loadStateFromLocalStorage(
-                roundNum,
-                round.length
-              );
-
-              let firstLineRegularActions =
-                currentState.firstLineRegularActions || 0;
-
-              const actionToRemove = round[index][0];
-              const isRegularAction =
-                !actionToRemove.startsWith("重开:") &&
-                !actionToRemove.startsWith("额外:");
-
-              // 创建新的动作数组
-              const newActions = [...round];
-              newActions.splice(index, 1);
-
-              // 只在删除第一行动作时更新 firstLineActions
-              if (isFirstLine) {
-                currentState.firstLineActions -= 1;
-                if (isRegularAction) {
-                  firstLineRegularActions -= 1;
-                }
-              }
-
+            const removeAction = (roundNum, index) => {
               try {
-                await axios.put(
-                  `${API_BASE_URL}/actions/${roundNum}`,
-                  newActions
-                );
+                const round = allActions.value[roundNum];
+                if (!round) return;
 
-                // 更新状态时保持扩展状态
+                const firstLineActions = round.firstLineActions || round.length;
+                const isFirstLine = index < firstLineActions;
+                const currentState = loadStateFromLocalStorage(
+                  roundNum,
+                  round.length
+                );
+                let firstLineRegularActions =
+                  currentState.firstLineRegularActions || 0;
+
+                const actionToRemove = round[index][0];
+                const isRegularAction =
+                  !actionToRemove.startsWith("重开:") &&
+                  !actionToRemove.startsWith("额外:");
+
+                const newActions = [...round];
+                newActions.splice(index, 1);
+
+                if (isFirstLine) {
+                  currentState.firstLineActions -= 1;
+                  if (isRegularAction) {
+                    firstLineRegularActions -= 1;
+                  }
+                }
+
                 allActions.value[roundNum] = newActions;
                 allActions.value[roundNum].isExtended = currentState.isExtended;
                 allActions.value[roundNum].firstLineActions =
                   currentState.firstLineActions;
 
-                // 更新状态
                 saveStateToLocalStorage(
                   roundNum,
                   currentState.isExtended,
                   currentState.firstLineActions,
                   firstLineRegularActions
                 );
+
+                // 保存到 LocalStorage
+                Storage.save("actions", allActions.value);
 
                 ElementPlus.ElMessage.success("删除成功");
               } catch (error) {
@@ -1217,12 +1209,10 @@
               }
             };
 
-            const addNewRound = async () => {
+            const addNewRound = () => {
               const rounds = Object.keys(allActions.value).map((r) =>
                 parseInt(r)
               );
-
-              // 找到第一个空缺的回合号
               let nextRound = 1;
               while (rounds.includes(nextRound) && nextRound <= 50) {
                 nextRound++;
@@ -1235,18 +1225,11 @@
               }
 
               allActions.value[nextRound] = [];
-              try {
-                await axios.post(
-                  `http://127.0.0.1:5000/api/actions/add/${nextRound}`
-                );
-                ElementPlus.ElMessage.success("新增回合");
-              } catch (error) {
-                console.error("新增回合失败:", error);
-                ElementPlus.ElMessage.error("新增回合失败");
-              }
+              Storage.save("actions", allActions.value);
+              ElementPlus.ElMessage.success("新增回合成功");
             };
 
-            const generateLoop = async () => {
+            const generateLoop = () => {
               if (loopStart.value > loopEnd.value) {
                 ElementPlus.ElMessage.warning("开始回合不能大于结束回合");
                 return;
@@ -1277,32 +1260,33 @@
                 return;
               }
 
-              try {
-                await axios.post(
-                  "http://127.0.0.1:5000/api/actions/generate-loop",
-                  {
-                    start: loopStart.value,
-                    end: loopEnd.value,
-                  }
-                );
-                await loadAllActions();
-                ElementPlus.ElMessage.success("生成循环成功");
-              } catch (error) {
-                console.error("生成循环失败:", error);
-                ElementPlus.ElMessage.error(
-                  error.response?.data?.error || "生成循环失败"
-                );
+              // 复制选定范围的动作到后续回合
+              const template = {};
+              for (let i = loopStart.value; i <= loopEnd.value; i++) {
+                template[i] = allActions.value[i];
               }
+
+              let currentRound = maxRound + 1;
+              for (let i = loopStart.value; i <= loopEnd.value; i++) {
+                if (currentRound <= 50) {
+                  allActions.value[currentRound] = JSON.parse(
+                    JSON.stringify(template[i])
+                  );
+                  currentRound++;
+                }
+              }
+
+              Storage.save("actions", allActions.value);
+              ElementPlus.ElMessage.success("生成循环成功");
             };
 
             const deleteRound = async (roundNum) => {
               try {
                 const currentActions = allActions.value[roundNum] || [];
 
-                // 如果前回合有动作，先清空动作
                 if (currentActions.length > 0) {
-                  await axios.put(`${API_BASE_URL}/actions/${roundNum}`, []);
                   allActions.value[roundNum] = [];
+                  Storage.save("actions", allActions.value);
                   ElementPlus.ElMessage.success("已清空该回合动作");
                   return;
                 }
@@ -1318,8 +1302,8 @@
                   }
                 );
 
-                await axios.delete(`${API_BASE_URL}/rounds/${roundNum}`);
                 delete allActions.value[roundNum];
+                Storage.save("actions", allActions.value);
                 ElementPlus.ElMessage.success("删除回合成功");
               } catch (error) {
                 if (error !== "cancel") {
@@ -1329,17 +1313,100 @@
               }
             };
 
-            // 获取可用位置
+            const importConfig = async () => {
+              try {
+                const input = document.createElement("input");
+                input.type = "file";
+                input.accept = ".json";
+
+                input.onchange = async (event) => {
+                  const file = event.target.files[0];
+                  if (!file) return;
+
+                  levelName.value = file.name.replace(".json", "");
+
+                  try {
+                    const formData = new FormData();
+                    formData.append("file", file);
+
+                    const response = await axios.post(
+                      `${API_BASE_URL}/actions/import`,
+                      formData,
+                      {
+                        headers: {
+                          "Content-Type": "multipart/form-data",
+                        },
+                      }
+                    );
+
+                    allActions.value = response.data.actions;
+                    Storage.save("actions", allActions.value);
+
+                    if (response.data.config_info) {
+                      levelType.value = response.data.config_info.level_type;
+                      levelRecognitionName.value =
+                        response.data.config_info.level_recognition_name;
+                      difficulty.value = response.data.config_info.difficulty;
+                      caveType.value = response.data.config_info.cave_type;
+                    }
+
+                    ElementPlus.ElMessage.success("导入成功");
+                  } catch (error) {
+                    console.error("导入失败:", error);
+                    ElementPlus.ElMessage.error(
+                      error.response?.data?.error || "导入失败"
+                    );
+                  }
+                };
+                input.click();
+              } catch (error) {
+                console.error("导入失败:", error);
+                ElementPlus.ElMessage.error("导入失败");
+              }
+            };
+
+            const clearConfig = async () => {
+              try {
+                await ElementPlus.ElMessageBox.confirm(
+                  "确认清空所有动作？此操作不可恢复",
+                  "警告",
+                  {
+                    confirmButtonText: "确定",
+                    cancelButtonText: "取消",
+                    type: "warning",
+                  }
+                );
+
+                allActions.value = {};
+                Storage.clearUserData();
+
+                localStorage.removeItem("levelType");
+                localStorage.removeItem("levelRecognitionName");
+                localStorage.removeItem("levelName");
+                localStorage.removeItem("caveType");
+
+                levelType.value = "";
+                levelRecognitionName.value = "";
+                levelName.value = "";
+                caveType.value = "";
+
+                ElementPlus.ElMessage.success("动作已清空");
+              } catch (error) {
+                if (error !== "cancel") {
+                  console.error("清空失败:", error);
+                  ElementPlus.ElMessage.error("清空失败");
+                }
+              }
+            };
+
             const getAvailablePositions = (actions) => {
-              const usedPositions = actions.map((actionGroup) =>
-                parseInt(actionGroup[0][0])
+              const usedPositions = actions.map(
+                (actionGroup) => actionGroup[0][0]
               );
-              return [1, 2, 3, 4, 5].filter(
+              return ["1", "2", "3", "4", "5"].filter(
                 (pos) => !usedPositions.includes(pos)
               );
             };
-
-            // 添加的方法用于获取第二行的可用位置
             const getAvailablePositionsExtended = (actions) => {
               const usedPositions = actions.map(
                 (actionGroup) => actionGroup[0][0]
@@ -1380,14 +1447,13 @@
                 }
 
                 exporting.value = true;
-                const response = await axios.get(`${API_BASE_URL}/export`, {
-                  params: {
-                    level_name: levelName.value,
-                    level_type: levelType.value,
-                    level_recognition_name: levelRecognitionName.value,
-                    difficulty: difficulty.value,
-                    cave_type: caveType.value,
-                  },
+                const response = await axios.post(`${API_BASE_URL}/export`, {
+                  level_name: levelName.value,
+                  level_type: levelType.value,
+                  level_recognition_name: levelRecognitionName.value,
+                  difficulty: difficulty.value,
+                  cave_type: caveType.value,
+                  actions: allActions.value, // 添加动作数据
                 });
 
                 lastExportPath.value = response.data.path;
@@ -1420,103 +1486,6 @@
               } catch (error) {
                 console.error("打开文件夹失败:", error);
                 ElementPlus.ElMessage.error("打开文件夹失败");
-              }
-            };
-
-            const clearConfig = async () => {
-              try {
-                await ElementPlus.ElMessageBox.confirm(
-                  "确认清空所有动作？此操作不可恢复",
-                  "警告",
-                  {
-                    confirmButtonText: "确定",
-                    cancelButtonText: "取消",
-                    type: "warning",
-                  }
-                );
-
-                await axios.post(`${API_BASE_URL}/actions/clear`);
-                allActions.value = {};
-
-                // 清除所有回合状态的 localStorage
-                for (let i = 1; i <= 50; i++) {
-                  localStorage.removeItem(`round_${i}_state`);
-                }
-
-                // 清空其他存储的值
-                localStorage.removeItem("levelType");
-                localStorage.removeItem("levelRecognitionName");
-                localStorage.removeItem("levelName");
-                localStorage.removeItem("caveType");
-
-                // 清空响应式变量
-                levelType.value = "";
-                levelRecognitionName.value = "";
-                levelName.value = "";
-                caveType.value = "";
-
-                ElementPlus.ElMessage.success("动作已清空");
-              } catch (error) {
-                if (error !== "cancel") {
-                  console.error("清空失败:", error);
-                  ElementPlus.ElMessage.error("清空失败");
-                }
-              }
-            };
-
-            const importConfig = async () => {
-              try {
-                const input = document.createElement("input");
-                input.type = "file";
-                input.accept = ".json";
-
-                input.onchange = async (event) => {
-                  const file = event.target.files[0];
-                  if (!file) return;
-
-                  // 设置关卡名称（去掉.json后缀）
-                  levelName.value = file.name.replace(".json", "");
-
-                  try {
-                    // 创建 FormData 对象
-                    const formData = new FormData();
-                    formData.append("file", file);
-
-                    const response = await axios.post(
-                      `${API_BASE_URL}/actions/import`,
-                      formData,
-                      {
-                        headers: {
-                          "Content-Type": "multipart/form-data",
-                        },
-                      }
-                    );
-
-                    // 更新动作配置
-                    allActions.value = response.data.actions;
-
-                    // 设置关卡类型和识别名称
-                    if (response.data.config_info) {
-                      levelType.value = response.data.config_info.level_type;
-                      levelRecognitionName.value =
-                        response.data.config_info.level_recognition_name;
-                      difficulty.value = response.data.config_info.difficulty;
-                      caveType.value = response.data.config_info.cave_type;
-                    }
-
-                    ElementPlus.ElMessage.success("导入成功");
-                  } catch (error) {
-                    console.error("导入失败:", error);
-                    ElementPlus.ElMessage.error(
-                      error.response?.data?.error || "导入失败"
-                    );
-                  }
-                };
-
-                input.click();
-              } catch (error) {
-                console.error("导入失败:", error);
-                ElementPlus.ElMessage.error("导入失败");
               }
             };
 
@@ -1684,12 +1653,12 @@
               handleDragEnd();
             };
 
-            const addRestart = async (roundNum, isExtended) => {
+            const addRestart = (roundNum, isExtended) => {
               try {
                 // 根据是否为扩展行选择对应的重开类型
-                const restartType =
-                  selectedRestartExtended.value[roundNum] ||
-                  selectedRestart.value[roundNum];
+                const restartType = isExtended
+                  ? selectedRestartExtended.value[roundNum]
+                  : selectedRestart.value[roundNum];
                 if (!restartType) {
                   ElementPlus.ElMessage.warning("请选择重开类型");
                   return;
@@ -1729,12 +1698,6 @@
                     (currentState.firstLineActions || 0) + 1;
                 }
 
-                // 直接更新动作数组
-                await axios.put(
-                  `${API_BASE_URL}/actions/${roundNum}`,
-                  currentActions
-                );
-
                 // 更新本地状态
                 allActions.value[roundNum] = currentActions;
                 allActions.value[roundNum].isExtended =
@@ -1748,6 +1711,9 @@
                   currentState.firstLineActions,
                   currentState.firstLineRegularActions || 0
                 );
+
+                // 保存到 LocalStorage
+                Storage.save("actions", allActions.value);
 
                 // 重置选择
                 if (isExtended) {
@@ -1763,7 +1729,7 @@
               }
             };
 
-            const addExtraAction = async (roundNum, isExtended) => {
+            const addExtraAction = (roundNum, isExtended) => {
               try {
                 const extraAction = isExtended
                   ? selectedExtraActionsExtended.value[roundNum]
@@ -1830,11 +1796,7 @@
                     (currentState.firstLineActions || 0) + 1;
                 }
 
-                await axios.put(
-                  `${API_BASE_URL}/actions/${roundNum}`,
-                  currentActions
-                );
-
+                // 更新本地状态
                 allActions.value[roundNum] = currentActions;
                 allActions.value[roundNum].isExtended =
                   currentState.isExtended || false;
@@ -1847,6 +1809,9 @@
                   currentState.firstLineActions,
                   currentState.firstLineRegularActions || 0
                 );
+
+                // 保存到 LocalStorage
+                Storage.save("actions", allActions.value);
 
                 // 重置选择
                 if (isExtended) {

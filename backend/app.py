@@ -168,15 +168,17 @@ def delete_round(round_num):
         print(f"删除回合 {round_num} 失败: {str(e)}")  # 添加错误日志
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/export', methods=['GET'])
+@app.route('/api/export', methods=['POST'])
 def export_config():
     """导出生成的配置文件"""
     try:
-        level_name = request.args.get('level_name', 'generated_config')
-        level_type = request.args.get('level_type', '')
-        level_recognition_name = request.args.get('level_recognition_name', '')
-        difficulty = request.args.get('difficulty', '')  # 获取难度参数
-        cave_type = request.args.get('cave_type', '')  # 获取洞窟类型参数
+        data = request.json
+        level_name = data.get('level_name', 'generated_config')
+        level_type = data.get('level_type', '')
+        level_recognition_name = data.get('level_recognition_name', '')
+        difficulty = data.get('difficulty', '')
+        cave_type = data.get('cave_type', '')
+        actions = data.get('actions', {})  # 从请求中获取动作数据
 
         if getattr(sys, 'frozen', False):
             # 打包环境
@@ -190,8 +192,7 @@ def export_config():
         os.makedirs(output_dir, exist_ok=True)
         config_path = os.path.join(output_dir, f'{level_name}.json')
 
-        # 首先将当前的动作配置保存到临时文件
-        actions = load_actions()
+        # 将接收到的动作数据保存到临时文件
         temp_config_path = os.path.join(DATA_DIR, 'temp_config.json')
         with open(temp_config_path, 'w', encoding='utf-8') as f:
             json.dump(actions, f, ensure_ascii=False, indent=4)
@@ -204,7 +205,7 @@ def export_config():
             python_executable = sys.executable
             result = subprocess.run(
                 [python_executable, script_path, temp_config_path, config_path,
-                 level_type, level_recognition_name, difficulty, cave_type],  # 添加难度参数
+                 level_type, level_recognition_name, difficulty, cave_type],
                 capture_output=True,
                 text=True,
                 cwd=os.path.dirname(script_path)
