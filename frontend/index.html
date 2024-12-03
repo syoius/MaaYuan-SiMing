@@ -920,7 +920,7 @@
     <script>
       function initApp() {
         const { createApp, ref, onMounted, computed, watch } = Vue;
-        const API_BASE_URL = "http://192.210.190.143:49481/api";
+        const API_BASE_URL = "https://cruisingcat.top/simingapi/";
 
         // 添加 LocalStorage 相关的工具函数
         const Storage = {
@@ -1453,16 +1453,29 @@
                   level_recognition_name: levelRecognitionName.value,
                   difficulty: difficulty.value,
                   cave_type: caveType.value,
-                  actions: allActions.value, // 添加动作数据
+                  actions: allActions.value,
                 });
 
-                lastExportPath.value = response.data.path;
-
-                ElementPlus.ElMessage({
-                  message: response.data.message,
-                  type: "success",
-                  duration: 5000,
+                // 创建Blob对象
+                const blob = new Blob([response.data.content], {
+                  type: "application/json",
                 });
+
+                // 创建下载链接
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = response.data.filename;
+
+                // 触发下载
+                document.body.appendChild(link);
+                link.click();
+
+                // 清理
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+
+                ElementPlus.ElMessage.success("配置文件已下载");
               } catch (error) {
                 console.error("导出失败:", error);
                 ElementPlus.ElMessage.error(

@@ -219,18 +219,18 @@ def export_config():
         if not os.path.exists(config_path):
             return jsonify({'error': '配置文件生成失败'}), 500
 
-        # 读取生成的配置文件
+        # 读取生成的配置文件并直接返回文件内容
         with open(config_path, 'r', encoding='utf-8') as f:
-            config = json.load(f)
+            config_content = f.read()
 
         # 清理临时文件
         if os.path.exists(temp_config_path):
             os.remove(temp_config_path)
 
+        # 返回文件内容和文件名
         return jsonify({
-            'config': config,
-            'path': config_path,
-            'message': f'配置文件已生成：{config_path}'
+            'content': config_content,
+            'filename': f'{level_name}.json'
         })
 
     except Exception as e:
