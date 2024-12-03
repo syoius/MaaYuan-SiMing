@@ -4,6 +4,9 @@ import json
 import os
 import sys
 import subprocess
+import uuid
+import tempfile
+from contextlib import contextmanager
 
 app = Flask(__name__)
 CORS(app)
@@ -168,6 +171,25 @@ def delete_round(round_num):
         print(f"删除回合 {round_num} 失败: {str(e)}")  # 添加错误日志
         return jsonify({'error': str(e)}), 500
 
+# 添加一个临时文件管理器
+@contextmanager
+def temp_json_file():
+    """创建临时JSON文件的上下文管理器"""
+    temp_file = tempfile.NamedTemporaryFile(
+        mode='w+',
+        suffix='.json',
+        encoding='utf-8',
+        delete=False
+    )
+    try:
+        yield temp_file
+    finally:
+        try:
+            temp_file.close()
+            os.unlink(temp_file.name)
+        except Exception as e:
+            print(f"清理临时文件失败: {str(e)}")
+
 @app.route('/api/export', methods=['POST'])
 def export_config():
     """导出生成的配置文件"""
@@ -180,6 +202,10 @@ def export_config():
         cave_type = data.get('cave_type', '')
         actions = data.get('actions', {})  # 从请求中获取动作数据
 
+        # 生成唯一的输出文件名
+        unique_id = uuid.uuid4().hex[:8]
+        output_filename = f'{level_name}_{unique_id}.json'
+
         if getattr(sys, 'frozen', False):
             # 打包环境
             from backend import fight_g
@@ -190,48 +216,51 @@ def export_config():
             output_dir = os.path.join(os.path.dirname(script_path), 'output')
 
         os.makedirs(output_dir, exist_ok=True)
-        config_path = os.path.join(output_dir, f'{level_name}.json')
+        config_path = os.path.join(output_dir, output_filename)
 
-        # 将接收到的动作数据保存到临时文件
-        temp_config_path = os.path.join(DATA_DIR, 'temp_config.json')
-        with open(temp_config_path, 'w', encoding='utf-8') as f:
-            json.dump(actions, f, ensure_ascii=False, indent=4)
+        # 使用临时文件上下文管理器
+        with temp_json_file() as temp_input, temp_json_file() as temp_output:
+            # 将动作数据写入临时输入文件
+            json.dump(actions, temp_input, ensure_ascii=False, indent=4)
+            temp_input.flush()  # 确保数据写入磁盘
 
-        if getattr(sys, 'frozen', False):
-            # 打包环境的处理逻辑
-            fight_g.generate_config(temp_config_path, config_path, level_type, level_recognition_name, difficulty, cave_type)
-        else:
-            # 开发环境下运行脚本
-            python_executable = sys.executable
-            result = subprocess.run(
-                [python_executable, script_path, temp_config_path, config_path,
-                 level_type, level_recognition_name, difficulty, cave_type],
-                capture_output=True,
-                text=True,
-                cwd=os.path.dirname(script_path)
-            )
+            if getattr(sys, 'frozen', False):
+                # 打包环境的处理逻辑
+                fight_g.generate_config(
+                    temp_input.name, 
+                    temp_output.name,
+                    level_type,
+                    level_recognition_name,
+                    difficulty,
+                    cave_type
+                )
+            else:
+                # 开发环境下运行脚本
+                python_executable = sys.executable
+                result = subprocess.run(
+                    [python_executable, script_path, temp_input.name, temp_output.name,
+                     level_type, level_recognition_name, difficulty, cave_type],
+                    capture_output=True,
+                    text=True,
+                    cwd=os.path.dirname(script_path)
+                )
 
-            if result.returncode != 0:
-                print(f"脚本执行失败: {result.stderr}")
-                return jsonify({'error': f'生成配置失败: {result.stderr}'}), 500
+                if result.returncode != 0:
+                    print(f"脚本执行失败: {result.stderr}")
+                    return jsonify({'error': f'生成配置失败: {result.stderr}'}), 500
 
-        # 检查文件是否生成成功
-        if not os.path.exists(config_path):
-            return jsonify({'error': '配置文件生成失败'}), 500
+            # 读取生成的配置文件内容
+            temp_output.seek(0)
+            config_content = temp_output.read()
 
-        # 读取生成的配置文件并直接返回文件内容
-        with open(config_path, 'r', encoding='utf-8') as f:
-            config_content = f.read()
+            if not config_content:
+                return jsonify({'error': '配置文件生成失败'}), 500
 
-        # 清理临时文件
-        if os.path.exists(temp_config_path):
-            os.remove(temp_config_path)
-
-        # 返回文件内容和文件名
-        return jsonify({
-            'content': config_content,
-            'filename': f'{level_name}.json'
-        })
+            # 返回文件内容和原始文件名（不包含唯一ID）
+            return jsonify({
+                'content': config_content,
+                'filename': f'{level_name}.json'  # 返回原始文件名给用户
+            })
 
     except Exception as e:
         print(f"导出失败: {str(e)}")
