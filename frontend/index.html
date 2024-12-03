@@ -1104,16 +1104,16 @@
                   roundNum,
                   currentActions.length
                 );
+                console.log('加载状态:', roundNum, currentState); // 添加调试日志
 
                 const isRegularAction = true;
 
-                if (!isExtended) {
-                  let firstLineRegularActions =
-                    currentState.firstLineRegularActions || 0;
-                  firstLineRegularActions += 1;
-                  currentState.firstLineRegularActions =
-                    firstLineRegularActions;
-                }
+                let firstLineRegularActions =
+                  currentState.firstLineRegularActions || 0;
+
+                firstLineRegularActions += 1;
+                currentState.firstLineRegularActions =
+                  firstLineRegularActions;
 
                 const newAction = [`${position}${action}`];
 
@@ -1121,6 +1121,8 @@
                 const insertIndex = isExtended
                   ? currentActions.length // 扩展行则添加到末尾
                   : currentState.firstLineActions || 0; // 第一行则添加到第一行末尾
+
+                console.log("插入位置:", insertIndex); // 添加调试日志
 
                 // 在正确位置插入新动作
                 currentActions.splice(insertIndex, 0, newAction);
@@ -1131,6 +1133,9 @@
                     (currentState.firstLineActions || 0) + 1;
                 }
 
+                // 保存到 LocalStorage
+                Storage.save("actions", allActions.value);
+
                 allActions.value[roundNum] = currentActions;
                 allActions.value[roundNum].isExtended =
                   currentState.isExtended || false;
@@ -1138,9 +1143,15 @@
                   currentState.firstLineActions;
                 allActions.value[roundNum].firstLineRegularActions =
                   currentState.firstLineRegularActions;
+                console.log("保存状态:", roundNum, currentState); // 添加调试日志
 
-                // 保存到 LocalStorage
-                Storage.save("actions", allActions.value);
+                // 保存新状态到localStorage
+                saveStateToLocalStorage(
+                  roundNum,
+                  currentState.isExtended,
+                  currentState.firstLineActions,
+                  currentState.firstLineRegularActions
+                );
 
                 // 重置选择
                 if (isExtended) {
@@ -1180,6 +1191,7 @@
                 const newActions = [...round];
                 newActions.splice(index, 1);
 
+                // 更新计数
                 if (isFirstLine) {
                   currentState.firstLineActions -= 1;
                   if (isRegularAction) {
@@ -1187,21 +1199,31 @@
                   }
                 }
 
+                // 如果删除后没有动作了，重置所有计数
+                if (newActions.length === 0) {
+                  currentState.isExtended = false;
+                  currentState.firstLineActions = 0;
+                  currentState.firstLineRegularActions = 0;
+                }
+
+                // 更新动作数组和状态
                 allActions.value[roundNum] = newActions;
                 allActions.value[roundNum].isExtended = currentState.isExtended;
                 allActions.value[roundNum].firstLineActions =
                   currentState.firstLineActions;
+                allActions.value[roundNum].firstLineRegularActions =
+                  currentState.firstLineRegularActions;
 
+                // 保存状态
                 saveStateToLocalStorage(
                   roundNum,
                   currentState.isExtended,
                   currentState.firstLineActions,
-                  firstLineRegularActions
+                  currentState.firstLineRegularActions
                 );
 
                 // 保存到 LocalStorage
                 Storage.save("actions", allActions.value);
-
                 ElementPlus.ElMessage.success("删除成功");
               } catch (error) {
                 console.error("删除失败:", error);
@@ -1285,7 +1307,16 @@
                 const currentActions = allActions.value[roundNum] || [];
 
                 if (currentActions.length > 0) {
+                  // 清空回合时重置所有相关计数
                   allActions.value[roundNum] = [];
+                  allActions.value[roundNum].isExtended = false;
+                  allActions.value[roundNum].firstLineActions = 0;
+                  allActions.value[roundNum].firstLineRegularActions = 0;
+                  
+                  // 同时清除本地存储中的状态
+                  const key = `round_${roundNum}_state`;
+                  localStorage.removeItem(key);
+                  
                   Storage.save("actions", allActions.value);
                   ElementPlus.ElMessage.success("已清空该回合动作");
                   return;
@@ -1711,6 +1742,9 @@
                     (currentState.firstLineActions || 0) + 1;
                 }
 
+                // 保存到 LocalStorage
+                Storage.save("actions", allActions.value);
+
                 // 更新本地状态
                 allActions.value[roundNum] = currentActions;
                 allActions.value[roundNum].isExtended =
@@ -1724,9 +1758,6 @@
                   currentState.firstLineActions,
                   currentState.firstLineRegularActions || 0
                 );
-
-                // 保存到 LocalStorage
-                Storage.save("actions", allActions.value);
 
                 // 重置选择
                 if (isExtended) {
@@ -1757,11 +1788,8 @@
                 if (extraAction === "再次行动") {
                   const position = extraActionPosition.value[roundNum];
                   const actionType = extraActionType.value[roundNum];
-
                   if (!position || !actionType) {
-                    ElementPlus.ElMessage.warning(
-                      "请选择再次行动的位置和动作类型"
-                    );
+                    ElementPlus.ElMessage.warning("请选择再次行动的位置和动作类型");
                     return;
                   }
                 }
@@ -1778,11 +1806,10 @@
                   ? [...allActions.value[roundNum]]
                   : [];
 
-                // 保持扩展状态
-                const currentState = loadStateFromLocalStorage(
-                  roundNum,
-                  currentActions.length
-                );
+                // 加载当前状态
+                const currentState = loadStateFromLocalStorage(roundNum, currentActions.length);
+                console.log("当前状态:", currentState); // 添加调试日志
+                console.log("当前动作:", currentActions); // 添加调试日志
 
                 // 创建新的额外操作
                 let newAction;
@@ -1801,6 +1828,9 @@
                   ? currentActions.length // 扩展行则添加到末尾
                   : currentState.firstLineActions || 0; // 第一行则添加到第一行末尾
 
+                console.log("插入位置:", insertIndex); // 添加调试日志
+
+                // 在正确位置插入新动作
                 currentActions.splice(insertIndex, 0, newAction);
 
                 // 更新第一行动作计数
@@ -1808,6 +1838,8 @@
                   currentState.firstLineActions =
                     (currentState.firstLineActions || 0) + 1;
                 }
+                // 同时保存动作数组
+                Storage.save("actions", allActions.value);
 
                 // 更新本地状态
                 allActions.value[roundNum] = currentActions;
@@ -1815,16 +1847,19 @@
                   currentState.isExtended || false;
                 allActions.value[roundNum].firstLineActions =
                   currentState.firstLineActions;
+                allActions.value[roundNum].firstLineRegularActions =
+                  currentState.firstLineRegularActions;
 
+                console.log("更新后状态:", currentState); // 添加调试日志
+                console.log("更新后动作:", currentActions); // 添加调试日志
+
+                // 保存状态到 LocalStorage
                 saveStateToLocalStorage(
                   roundNum,
                   currentState.isExtended,
                   currentState.firstLineActions,
                   currentState.firstLineRegularActions || 0
                 );
-
-                // 保存到 LocalStorage
-                Storage.save("actions", allActions.value);
 
                 // 重置选择
                 if (isExtended) {
@@ -1846,6 +1881,7 @@
                 ElementPlus.ElMessage.error("添加额外操作失败");
               }
             };
+
 
             watch(levelType, (newValue) => {
               localStorage.setItem("levelType", newValue);
