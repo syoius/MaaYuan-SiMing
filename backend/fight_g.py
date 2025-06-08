@@ -124,24 +124,33 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                             result_config[extra_action_key]["text_doc"] = "再动"+action_code
                             result_config[extra_action_key]["focus"] = "再次行动:"+get_action_focus(action_code)
 
-                        # 设置前一个动作的next为当前额外操作
+                        # 设置前一个动作的next为当前额外操作（append，不覆盖）
                         if current_action_key:
-                            result_config[current_action_key]["next"] = [extra_action_key]
+                            if "next" not in result_config[current_action_key]:
+                                result_config[current_action_key]["next"] = []
+                            result_config[current_action_key]["next"].append(extra_action_key)
 
                         current_action_key = extra_action_key
 
                         if i == len(actions) and int(round_num) < max_round_num:
-                            # 为最后一个动作添加"胜利后重开"
-                            result_config[extra_action_key]["next"] = ["抄作业战斗胜利", f"检测回合{int(round_num)+1}"]
-                        else:
-                            result_config[extra_action_key]["next"] = ["抄作业战斗胜利"]
+                            # 为最后一个动作添加"胜利检测"
+                            if "next" not in result_config[extra_action_key]:
+                                result_config[extra_action_key]["next"] = []
+                            result_config[extra_action_key]["next"].append("抄作业战斗胜利")
+                            result_config[extra_action_key]["next"].append(f"检测回合{int(round_num)+1}")
+                        elif i == len(actions):
+                            if "next" not in result_config[extra_action_key]:
+                                result_config[extra_action_key]["next"] = []
+                            result_config[extra_action_key]["next"].append("抄作业战斗胜利")
 
                     elif action.startswith('重开:'):
                         # 处理重开操作
                         restart_type = action.split(':')[1]
                         restart_node = f"抄作业{restart_type}重开" if restart_type == "全灭" else f"抄作业点左上角重开"
                         if current_action_key:
-                            result_config[current_action_key]["next"] = [restart_node]
+                            if "next" not in result_config[current_action_key]:
+                                result_config[current_action_key]["next"] = []
+                            result_config[current_action_key]["next"].append(restart_node)
                             if i < len(actions):
                                 result_config[current_action_key]["next"].append(f"回合{round_num}行动{i + 1}")
                             elif int(round_num) < max_round_num:
@@ -155,17 +164,25 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                             result_config[action_key]["text_doc"] = action
                             result_config[action_key]["focus"] = "行动:"+get_action_focus(action)
 
+                            # 设置前一个动作的next为当前动作（append，不覆盖）
                             if current_action_key:
-                                result_config[current_action_key]["next"] = [action_key]
+                                if "next" not in result_config[current_action_key]:
+                                    result_config[current_action_key]["next"] = []
+                                result_config[current_action_key]["next"].append(action_key)
 
                             current_action_key = action_key
 
                             # 如果是当前回合的最后一个动作
                             if i == len(actions) and int(round_num) < max_round_num:
                                 # 为最后一个动作添加"胜利后重开"
-                                result_config[action_key]["next"] = ["抄作业战斗胜利", f"检测回合{int(round_num)+1}"]
-                            else:
-                                result_config[action_key]["next"] = ["抄作业战斗胜利"]
+                                if "next" not in result_config[action_key]:
+                                    result_config[action_key]["next"] = []
+                                result_config[action_key]["next"].append("抄作业战斗胜利")
+                                result_config[action_key]["next"].append(f"检测回合{int(round_num)+1}")
+                            elif i == len(actions):
+                                if "next" not in result_config[action_key]:
+                                    result_config[action_key]["next"] = []
+                                result_config[action_key]["next"].append("抄作业战斗胜利")
 
         # 根据关卡类别设置重开后的导航节点
         if level_type == '主线':
