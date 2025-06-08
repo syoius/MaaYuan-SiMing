@@ -124,12 +124,18 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                             result_config[extra_action_key]["text_doc"] = "再动"+action_code
                             result_config[extra_action_key]["focus"] = "再次行动:"+get_action_focus(action_code)
 
-
                         # 设置前一个动作的next为当前额外操作
                         if current_action_key:
                             result_config[current_action_key]["next"] = [extra_action_key]
 
                         current_action_key = extra_action_key
+
+                        if i == len(actions) and int(round_num) < max_round_num:
+                            # 为最后一个动作添加"胜利后重开"
+                            result_config[extra_action_key]["next"] = ["抄作业战斗胜利", f"检测回合{int(round_num)+1}"]
+                        else:
+                            result_config[extra_action_key]["next"] = ["抄作业战斗胜利"]
+
                     elif action.startswith('重开:'):
                         # 处理重开操作
                         restart_type = action.split(':')[1]
@@ -156,29 +162,10 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
 
                             # 如果是当前回合的最后一个动作
                             if i == len(actions) and int(round_num) < max_round_num:
-                                if level_type == '洞窟':
-                                    # 为洞窟关卡的最后一个动作添加“胜利后重开”
-                                    result_config[action_key]["next"] = ["抄作业战斗胜利", f"检测回合{int(round_num)+1}"]
-                                else:
-                                    result_config[action_key]["next"] = [f"检测回合{int(round_num)+1}"]
+                                # 为最后一个动作添加"胜利后重开"
+                                result_config[action_key]["next"] = ["抄作业战斗胜利", f"检测回合{int(round_num)+1}"]
                             else:
                                 result_config[action_key]["next"] = ["抄作业战斗胜利"]
-
-            # 补充：如果最后一个动作是额外动作且不是最后一回合，补充next
-            if current_action_key:
-                last_action = result_config.get(current_action_key, {})
-                is_extra = last_action.get("text_doc", "").startswith("再动") \
-                    or last_action.get("text_doc", "") in ["左侧目标", "右侧目标", "等待"]
-                if int(round_num) < max_round_num and is_extra:
-                    if level_type == '洞窟':
-                        last_action["next"] = ["抄作业战斗胜利", f"检测回合{int(round_num)+1}"]
-                    else:
-                        last_action["next"] = [f"检测回合{int(round_num)+1}"]
-                    result_config[current_action_key] = last_action
-                # 新增：如果是最后一回合且是额外动作，补充next指向胜利
-                elif int(round_num) == max_round_num and is_extra:
-                    last_action["next"] = ["抄作业战斗胜利"]
-                    result_config[current_action_key] = last_action
 
         # 根据关卡类别设置重开后的导航节点
         if level_type == '主线':
