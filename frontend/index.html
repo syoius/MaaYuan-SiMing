@@ -1701,23 +1701,14 @@
               actions.isExtended = isExtendedState;
               actions.firstLineActions = firstLineActionsCount;
 
-              try {
-                await axios.put(
-                  `${API_BASE_URL}/actions/${targetRound}`,
-                  actions
-                );
+              // 只在本地保存，不与后端交互
+              allActions.value[targetRound] = actions;
+              allActions.value[targetRound].isExtended = isExtendedState;
+              allActions.value[targetRound].firstLineActions =
+                firstLineActionsCount;
+              Storage.save("actions", allActions.value);
 
-                // 更新动作数组时保持扩展状态
-                allActions.value[targetRound] = actions;
-                allActions.value[targetRound].isExtended = isExtendedState;
-                allActions.value[targetRound].firstLineActions =
-                  firstLineActionsCount;
-
-                ElementPlus.ElMessage.success("动作顺序已更新");
-              } catch (error) {
-                console.error("更新失败:", error);
-                ElementPlus.ElMessage.error("更新失败");
-              }
+              ElementPlus.ElMessage.success("动作顺序已更新");
 
               handleDragEnd();
             };
