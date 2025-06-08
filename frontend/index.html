@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Maa鸢/司命 - 勘天刻命 v1.9.1</title>
+    <title>Maa鸢/司命 - 勘天刻命 v1.9.2</title>
     <!-- 添加网站图标 -->
     <link rel="icon" href="assets/icon.ico" type="image/x-icon" />
     <!-- Element Plus 的样式 -->
@@ -1104,7 +1104,7 @@
                   roundNum,
                   currentActions.length
                 );
-                console.log('加载状态:', roundNum, currentState); // 添加调试日志
+                console.log("加载状态:", roundNum, currentState); // 添加调试日志
 
                 const isRegularAction = true;
 
@@ -1112,8 +1112,7 @@
                   currentState.firstLineRegularActions || 0;
 
                 firstLineRegularActions += 1;
-                currentState.firstLineRegularActions =
-                  firstLineRegularActions;
+                currentState.firstLineRegularActions = firstLineRegularActions;
 
                 const newAction = [`${position}${action}`];
 
@@ -1312,11 +1311,11 @@
                   allActions.value[roundNum].isExtended = false;
                   allActions.value[roundNum].firstLineActions = 0;
                   allActions.value[roundNum].firstLineRegularActions = 0;
-                  
+
                   // 同时清除本地存储中的状态
                   const key = `round_${roundNum}_state`;
                   localStorage.removeItem(key);
-                  
+
                   Storage.save("actions", allActions.value);
                   ElementPlus.ElMessage.success("已清空该回合动作");
                   return;
@@ -1789,7 +1788,9 @@
                   const position = extraActionPosition.value[roundNum];
                   const actionType = extraActionType.value[roundNum];
                   if (!position || !actionType) {
-                    ElementPlus.ElMessage.warning("请选择再次行动的位置和动作类型");
+                    ElementPlus.ElMessage.warning(
+                      "请选择再次行动的位置和动作类型"
+                    );
                     return;
                   }
                 }
@@ -1807,7 +1808,10 @@
                   : [];
 
                 // 加载当前状态
-                const currentState = loadStateFromLocalStorage(roundNum, currentActions.length);
+                const currentState = loadStateFromLocalStorage(
+                  roundNum,
+                  currentActions.length
+                );
                 console.log("当前状态:", currentState); // 添加调试日志
                 console.log("当前动作:", currentActions); // 添加调试日志
 
@@ -1881,7 +1885,6 @@
                 ElementPlus.ElMessage.error("添加额外操作失败");
               }
             };
-
 
             watch(levelType, (newValue) => {
               localStorage.setItem("levelType", newValue);
