@@ -52,7 +52,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                 "recognition": "OCR",
                 "expected": f"回合{round_num}",
                 "roi": [585, 28, 90, 65],
-                "text_doc": f"回合{round_num}",
+                "focus": f"当前回合：{round_num}",
                 "next": [f"回合{round_num}行动1"],
                 "post_delay": 2000,
             }
@@ -68,7 +68,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                         extra_action_key = f"回合{round_num}行动{i}"
                         if extra_action_type == "左侧目标":
                             result_config[extra_action_key] = {
-                                "text_doc": "左侧目标",
+                                "focus": "切换至左侧目标",
                                 "action": "Click",
                                 "target": [154, 648, 1, 1],
                                 "post_delay": 2000,
@@ -76,7 +76,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                             }
                         elif extra_action_type == "右侧目标":
                             result_config[extra_action_key] = {
-                                "text_doc": "右侧目标",
+                                "focus": "切换至右侧目标",
                                 "action": "Click",
                                 "target": [603,413,18,21],
                                 "post_delay": 2000,
@@ -85,7 +85,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                         elif extra_action_type == "等待":
                             wait_time = int(action.split(':')[2])
                             result_config[extra_action_key] = {
-                                "text_doc": "等待",
+                                "focus": "等待",
                                 "post_delay": wait_time
                             }
                         # elif extra_action_type == "判断数字":
@@ -97,7 +97,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                             action_config = get_action(action_code)
                             if action_config:
                                 result_config[extra_action_key] = action_config.copy()
-                            result_config[extra_action_key]["text_doc"] = "再动"+action_code
+                            result_config[extra_action_key]["focus"] = "再动"+action_code
 
 
                         # 设置前一个动作的next为当前额外操作
@@ -121,7 +121,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                         if action_config:
                             action_key = f"回合{round_num}行动{i}"
                             result_config[action_key] = action_config.copy()
-                            result_config[action_key]["text_doc"] = action
+                            result_config[action_key]["focus"] = action
 
                             if current_action_key:
                                 result_config[current_action_key]["next"] = [action_key]
@@ -161,6 +161,10 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
             "post_delay": 2000,
             "next": ["抄作业确定左上角重开", next_node],
             "timeout": 20000
+        }
+
+        result_config["抄作业胜利后继续"] = {
+            "next": [next_node]
         }
 
         # 根据关卡类别和识别名称设置对应的导航节点
@@ -282,7 +286,7 @@ def reverse_config(config_data):
         # 解析动作类型
         action_code = None
         # 检查是否是额外操作
-        if (value.get('text_doc') and value.get('text_doc').startswith("再动")):
+        if (value.get('focus') and value.get('focus').startswith("再动")):
             # 处理再次行动
             # 根据动作类型判断是普攻、大招还是下拉
             if value.get('action') == 'Click':
@@ -296,11 +300,11 @@ def reverse_config(config_data):
                 x = value.get('begin', [0, 0, 0, 0])[0]
                 position = '1' if x < 100 else '2' if x < 250 else '3' if x < 400 else '4' if x < 550 else '5'
             action_code = f"额外:{position}{action_type}"
-        elif value.get('text_doc') == "左侧目标":
+        elif value.get('focus') == "切换至左侧目标":
             action_code = "额外:左侧目标"
-        elif value.get('text_doc') == "右侧目标":
+        elif value.get('focus') == "切换至右侧目标":
             action_code = "额外:右侧目标"
-        elif value.get('text_doc') == "等待":
+        elif value.get('focus') == "等待":
             action_code = f"额外:等待:{value.get('post_delay')}"
         elif value.get('action') == 'Swipe':
             begin = value.get('begin', [0, 0, 0, 0])
