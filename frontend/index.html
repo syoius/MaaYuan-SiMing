@@ -828,95 +828,96 @@
                 </el-form-item>
               </el-form>
 
-              <div style="display: flex; flex-shrink: 0">
+            <div style="display: flex; flex-shrink: 0">
+              <el-button
+                type="primary"
+                @click="importConfig"
+                plain
+                style="margin-left: 20px"
+              >
+                <template #icon
+                  ><el-icon><Download /></el-icon
+                ></template>
+                导入作业
+              </el-button>
+
+              <el-button
+                type="danger"
+                @click="clearConfig"
+                plain
+                style="margin-right: 10px"
+              >
+                <template #icon
+                  ><el-icon><Delete /></el-icon
+                ></template>
+                清空作业
+              </el-button>
+
+              <el-button-group style="white-space: nowrap">
                 <el-button
                   type="primary"
-                  @click="importConfig"
-                  plain
-                  style="margin-left: 20px"
+                  @click="exportConfig"
+                  :loading="exporting"
+                  :style="{ width: lastExportPath ? '50%' : 'auto' }"
                 >
                   <template #icon
-                    ><el-icon><Download /></el-icon
+                    ><el-icon><Upload /></el-icon
                   ></template>
-                  导入作业
+                  {{ lastExportPath ? '导出' : '导出作业' }}
                 </el-button>
-
                 <el-button
-                  type="danger"
-                  @click="clearConfig"
+                  type="primary"
+                  @click="openOutputFolder"
+                  v-if="lastExportPath"
                   plain
-                  style="margin-right: 10px"
+                  style="width: 50%"
                 >
                   <template #icon
-                    ><el-icon><Delete /></el-icon
+                    ><el-icon><Folder /></el-icon
                   ></template>
-                  清空作业
+                  打开
                 </el-button>
+              </el-button-group>
+            </div>
+          </div>
+        </div>
 
-                <el-button-group style="white-space: nowrap">
-                  <el-button
-                    type="primary"
-                    @click="exportConfig"
-                    :loading="exporting"
-                    :style="{ width: lastExportPath ? '50%' : 'auto' }"
-                  >
-                    <template #icon
-                      ><el-icon><Upload /></el-icon
-                    ></template>
-                    {{ lastExportPath ? '导出' : '导出作业' }}
-                  </el-button>
-                  <el-button
-                    type="primary"
-                    @click="openOutputFolder"
-                    v-if="lastExportPath"
-                    plain
-                    style="width: 50%"
-                  >
-                    <template #icon
-                      ><el-icon><Folder /></el-icon
-                    ></template>
-                    打开
-                  </el-button>
-                </el-button-group>
+                      <!-- 第三行：外部链接 -->
+              <div
+                style="
+                  width: 100%;
+                  display: flex;
+                  justify-content: center;
+                  align-items: center;
+                  margin: 10px 0 0 0;
+                "
+              >
+                <a
+                  href="https://td3nqr3477.feishu.cn/base/BtwRb6yvxaRAsis3uVCccLVKnWg?table=tbl6DolUZQaGOMIb&view=vew54wfNwm"
+                  target="_blank"
+                  style="
+                    margin: 0 20px;
+                    color: #409eff;
+                    text-decoration: underline;
+                    font-size: 15px;
+                  "
+                  >点击访问作业站</a
+                >
+                <a
+                  href="https://td3nqr3477.feishu.cn/share/base/form/shrcnJX0flRpMVVLdsBIb1L0MRh"
+                  target="_blank"
+                  style="
+                    margin: 0 20px;
+                    color: #409eff;
+                    text-decoration: underline;
+                    font-size: 15px;
+                  "
+                  >点击上传作业</a
+                >
               </div>
             </div>
           </div>
-
-          <!-- 第三行：外部链接 -->
-          <div
-            style="
-              width: 100%;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              margin: 10px 0 0 0;
-            "
-          >
-            <a
-              href="https://td3nqr3477.feishu.cn/base/BtwRb6yvxaRAsis3uVCccLVKnWg?table=tbl6DolUZQaGOMIb&view=vew54wfNwm"
-              target="_blank"
-              style="
-                margin: 0 20px;
-                color: #409eff;
-                text-decoration: underline;
-                font-size: 15px;
-              "
-              >点击访问作业站</a
-            >
-            <a
-              href="https://td3nqr3477.feishu.cn/share/base/form/shrcnJX0flRpMVVLdsBIb1L0MRh"
-              target="_blank"
-              style="
-                margin: 0 20px;
-                color: #409eff;
-                text-decoration: underline;
-                font-size: 15px;
-              "
-              >点击上传作业</a
-            >
-          </div>
         </div>
-      </div>
     </div>
 
     <!-- 1. 首先加载 Vue -->
