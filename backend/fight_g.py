@@ -71,8 +71,10 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
             result_config[f"检测回合{round_num}"] = {
                 "recognition": "OCR",
                 "expected": f"回合{round_num}",
-                "roi": [585, 28, 90, 65],
+                "roi": [641, 43, 43, 37],
                 "text_doc": f"回合{round_num}",
+                "model": "en",
+                "only_rec": true,
                 "focus": f"当前：第{round_num}回合",
                 "next": [f"回合{round_num}行动1"],
                 "post_delay": 2000,
