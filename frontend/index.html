@@ -883,14 +883,66 @@
           </div>
 
           <!-- 第三行：外部链接 -->
-          <div style="text-align: center; margin: 10px 0 0 0">
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              margin: 20px 0 0 0;
+            "
+          >
+            <!-- 司命更新内容 Popover -->
+            <el-popover
+              placement="bottom-start"
+              width="300"
+              trigger="hover"
+              style="margin-right: 30px"
+            >
+              <template #reference>
+                <span
+                  style="
+                    color: #f56c6c;
+                    cursor: pointer;
+                    font-weight: bold;
+                    margin: 0 20px;
+                  "
+                  >司命更新内容</span
+                >
+              </template>
+              <div>
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    font-weight: bold;
+                    margin-bottom: 6px;
+                  "
+                >
+                  <span>版本号：v1.9.2</span>
+                  <span>更新时间：2025年6月9日</span>
+                </div>
+                <div>
+                  <ul style="padding-left: 18px; margin: 0">
+                    <li>新增重开类型 - 没赌到橙星重开</li>
+                    <li>
+                      预适配抄作业自定义启动/提前停止功能 (需 MaaYuan v0.9.6
+                      抄作业V3)
+                    </li>
+                    <li>提高回合数识别准确率（需 MaaYuan v0.9.5 以上）</li>
+                    <li>修复部分导入导出相关的bug</li>
+                    <li>界面细节优化</li>
+                  </ul>
+                </div>
+              </div>
+            </el-popover>
             <a
               href="https://td3nqr3477.feishu.cn/base/BtwRb6yvxaRAsis3uVCccLVKnWg?table=tbl6DolUZQaGOMIb&view=vew54wfNwm"
               target="_blank"
               style="
-                margin: 0 20px;
+                margin: 20px 20px;
                 color: #409eff;
                 font-size: 15px;
+                font-weight: bold;
                 text-decoration: none;
               "
               >点击访问作业站</a
@@ -902,6 +954,7 @@
                 margin: 0 20px;
                 color: #409eff;
                 font-size: 15px;
+                font-weight: bold;
                 text-decoration: none;
               "
               >点击上传作业</a
