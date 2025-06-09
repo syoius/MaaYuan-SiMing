@@ -325,7 +325,10 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
         raise
 
 def reverse_config(config_data):
-    """从生成的配置文件反向生成回合动作配置"""
+    """
+    从生成的配置文件反向生成回合动作配置 (最终版)。
+    采用“构建-填充”模式，确保逻辑清晰，覆盖所有边缘情况。
+    """
     round_actions = {}
     config_info = {
         'level_type': '',
@@ -334,7 +337,7 @@ def reverse_config(config_data):
         'cave_type': ''
     }
 
-    # 1. 提取关卡元信息 (逻辑不变)
+    # 1. 提取关卡元信息 (此部分逻辑正确，保持不变)
     restart_node = config_data.get("抄作业点左上角重开", {})
     next_nodes = restart_node.get("next", [])
     if len(next_nodes) >= 2:
@@ -354,100 +357,89 @@ def reverse_config(config_data):
             config_info['level_type'] = '其他'
             config_info['level_recognition_name'] = config_data.get("抄作业找到关卡-OCR", {}).get("expected", "")
 
-    # 2. 创建临时字典，用于存储所有解析到的动作
-    # 结构: { "round_num": [(sort_key, action_list), ...], ... }
-    # sort_key 用于保证动作顺序正确 (例如 action_num 和 action_num + 0.5)
-    temp_actions = {}
+    # 2. 构建阶段：扫描所有节点，填充一个临时的、多维度的信息字典
+    # 结构: { round_num: {'prefix': [], 'actions': []} }
+    temp_data = {}
 
-    # 3. 第一遍：解析所有实际的“回合X行动Y”节点
+    # Pass 1: 扫描所有节点，分类填充信息
     for key, value in config_data.items():
-        if not key.startswith('回合') or '检测' in key:
-            continue
+        # Case A: 找到回合的起始指令
+        if key.startswith("检测回合"):
+            round_num = key.replace("检测回合", "")
+            temp_data.setdefault(round_num, {'prefix': [], 'actions': []})
+            
+            next_list = value.get("next", [])
+            if not next_list: continue
 
-        parts = key.split('回合')[1].split('行动')
-        round_num = parts[0]
-        action_num = int(parts[1])
+            first_next = next_list[0]
+            if first_next == f"第{round_num}回合橙星检测":
+                temp_data[round_num]['prefix'].append(["重开:无橙星"])
+            elif first_next == "抄作业点左上角重开":
+                temp_data[round_num]['prefix'].append(["重开:左上角"])
+            elif first_next == "抄作业全灭重开":
+                temp_data[round_num]['prefix'].append(["重开:全灭"])
 
-        temp_actions.setdefault(round_num, [])
+        # Case B: 找到常规动作
+        elif key.startswith('回合') and '行动' in key:
+            try:
+                parts = key.split('回合')[1].split('行动')
+                round_num, action_num = parts[0], int(parts[1])
+            except (IndexError, ValueError):
+                continue
 
-        action_code = None
-        # 根据 value['text_doc'] 或 value['action'] 等信息反推 action_code
-        if value.get('text_doc', '').startswith("再动"):
-            action_code = value['text_doc'].replace("再动", "额外:")
-        elif value.get('text_doc') == "左侧目标":
-            action_code = "额外:左侧目标"
-        elif value.get('text_doc') == "右侧目标":
-            action_code = "额外:右侧目标"
-        elif value.get('text_doc') == "等待":
-            action_code = f"额外:等待:{value.get('post_delay')}"
-        else: # 普通攻击或技能
-            position_code = value.get('text_doc', '')[0]
-            action_type_code = ''
-            if value.get('action') == 'Click':
-                action_type_code = '普'
-            elif value.get('action') == 'Swipe':
-                begin_y = value.get('begin', [0, 0])[1]
-                end_y = value.get('end', [0, 0])[1]
-                action_type_code = '大' if end_y < begin_y else '下'
-            if position_code and action_type_code:
-                action_code = f"{position_code}{action_type_code}"
+            temp_data.setdefault(round_num, {'prefix': [], 'actions': []})
 
-        if action_code:
-            temp_actions[round_num].append((action_num, [action_code]))
+            # 从 text_doc 还原动作码，这是最可靠的方式
+            action_code = value.get('text_doc', '')
+            if not action_code: continue
+            
+            # 还原 "额外" 前缀
+            if value.get('focus', '').startswith('再次行动:'):
+                action_code = f"额外:{action_code}"
+            elif action_code in ['左侧目标', '右侧目标']:
+                action_code = f"额外:{action_code}"
+            elif action_code == '等待':
+                action_code = f"额外:等待:{value.get('post_delay')}"
 
-            # 检查此动作后是否紧跟着重开指令
+            # 存储动作及其排序键
+            temp_data[round_num]['actions'].append((action_num, [action_code]))
+
+            # 检查并存储附加的重开指令
             next_actions = value.get('next', [])
             if "抄作业全灭重开" in next_actions:
-                # 使用小数排序键，确保它紧跟在当前动作之后
-                temp_actions[round_num].append((action_num + 0.5, ["重开:全灭"]))
-            elif "抄作业点左上角重开" in next_actions:
-                temp_actions[round_num].append((action_num + 0.5, ["重开:左上角"]))
+                temp_data[round_num]['actions'].append((action_num + 0.5, ["重开:全灭"]))
+            elif len(next_actions) == 1 and "抄作业点左上角重开" in next_actions:
+                temp_data[round_num]['actions'].append((action_num + 0.5, ["重开:左上角"]))
 
-    # 4. 第二遍：解析“检测回合”节点，还原“无橙星重开”和“仅重开的回合”
-    for key, value in config_data.items():
-        if not key.startswith("检测回合"):
-            continue
+    # 3. 组装阶段：根据收集到的信息，生成最终的 round_actions
+    sorted_round_nums = sorted(temp_data.keys(), key=int)
 
-        round_num = key.replace("检测回合", "")
-        next_list = value.get("next", [])
-        if not next_list:
-            continue
+    for round_num in sorted_round_nums:
+        round_info = temp_data[round_num]
+        prefix = round_info['prefix']
+        actions = round_info['actions']
 
-        first_next_node = next_list[0]
+        # 关键逻辑判断：
+        # 如果一个回合有常规动作(actions不为空)，那么它的前缀只可能是 "无橙星"。
+        # 如果它的前缀是 "左上角重开" 或 "全灭重开"，那么它一定没有常规动作。
+        
+        final_action_list = []
+        if actions: # 如果存在常规动作
+            # 只有 "无橙星" 前缀可以和常规动作共存
+            if prefix and prefix[0] == ["重开:无橙星"]:
+                final_action_list.extend(prefix)
+            
+            # 排序并添加常规动作
+            sorted_actions = [action for sort_key, action in sorted(actions, key=lambda x: x[0])]
+            final_action_list.extend(sorted_actions)
+        
+        elif prefix: # 如果没有常规动作，但有前缀
+            # 这就是 "仅重开" 的情况
+            final_action_list.extend(prefix)
 
-        # 检查是否是“无橙星重开”逻辑
-        if first_next_node == f"第{round_num}回合橙星检测":
-            temp_actions.setdefault(round_num, [])
-            # 使用-1作为排序键，确保它在最前面
-            temp_actions[round_num].append((-1, ["重开:无橙星"]))
-
-        # 检查是否是“仅重开的回合”
-        # 条件：该回合在第一遍解析中没有任何动作 (temp_actions.get(round_num) 为空)
-        elif not temp_actions.get(round_num):
-            if first_next_node == "抄作业点左上角重开":
-                temp_actions.setdefault(round_num, [])
-                temp_actions[round_num].append((-1, ["重开:左上角"]))
-            elif first_next_node == "抄作业全灭重开": # 虽然少见，但逻辑上支持
-                temp_actions.setdefault(round_num, [])
-                temp_actions[round_num].append((-1, ["重开:全灭"]))
-
-    # 5. 最后，整理 temp_actions 到最终的 round_actions 格式
-    for round_num, actions_with_sort_key in sorted(temp_actions.items(), key=lambda item: int(item[0])):
-        if not actions_with_sort_key:
-            continue
-
-        # 按排序键排序，然后提取出干净的动作列表
-        sorted_actions = sorted(actions_with_sort_key, key=lambda x: x[0])
-        final_action_list = [action_list for sort_key, action_list in sorted_actions]
-
-        # 去除可能因逻辑重复产生的重复项（例如，无橙星被多次添加）
-        unique_actions = []
-        for action in final_action_list:
-            if action not in unique_actions:
-                unique_actions.append(action)
-
-        round_actions[round_num] = unique_actions
-
+        if final_action_list:
+            round_actions[round_num] = final_action_list
+            
     return {
         'actions': round_actions,
         'config_info': config_info
