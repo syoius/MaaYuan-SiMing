@@ -394,8 +394,8 @@ def reverse_config(config_data):
             if not action_code: continue
             
             # 还原 "额外" 前缀
-            if value.get('focus', '').startswith('再次行动:'):
-                action_code = f"额外:{action_code}"
+            if action_code.startswith('再动'):
+                action_code = f"额外:{action_code[2:]}"  # 去掉"再动"前缀
             elif action_code in ['左侧目标', '右侧目标']:
                 action_code = f"额外:{action_code}"
             elif action_code == '等待':
