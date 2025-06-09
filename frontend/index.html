@@ -426,6 +426,10 @@
                             label="点左上角重开"
                             value="点左上角重开"
                           ></el-option>
+                          <el-option
+                            label="无橙星重开"
+                            value="无橙星重开"
+                          ></el-option>
                         </el-select>
                       </el-form-item>
                       <el-form-item style="margin: 0">
@@ -663,6 +667,10 @@
                           <el-option
                             label="点左上角重开"
                             value="点左上角重开"
+                          ></el-option>
+                          <el-option
+                            label="无橙星重开"
+                            value="无橙星重开"
                           ></el-option>
                         </el-select>
                       </el-form-item>
@@ -1783,8 +1791,10 @@
 
                 // 获取最后一个动作数组
                 if (currentActions.length === 0) {
-                  ElementPlus.ElMessage.warning("请先添加动作再设置重开");
-                  return;
+                  if (restartType == "全灭重开") {
+                    ElementPlus.ElMessage.warning("请先添加动作再设置重开");
+                    return;
+                  }
                 }
 
                 // 获取当前状态
@@ -1795,7 +1805,15 @@
 
                 // 创建新的重开动作
                 const newAction = [
-                  `重开:${restartType === "全灭重开" ? "全灭" : "左上角"}`,
+                  `重开:${
+                    restartType === "全灭重开"
+                      ? "全灭"
+                      : restartType === "点左上角重开"
+                      ? "左上角"
+                      : restartType === "无橙星重开"
+                      ? "无橙星"
+                      : restartType
+                  }`,
                 ];
 
                 // 根据是否为扩展行决定插入位置
