@@ -110,7 +110,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                 "post_delay": 2000,
             }
 
-            if round_num == 6:
+            if round_num == "6":
                 result_config[f"检测回合{round_num}"].update({
                     "model": "en",
                     "only_rec": True
