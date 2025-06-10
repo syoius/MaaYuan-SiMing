@@ -111,10 +111,10 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
             }
 
             if round_num == 6:
-                result_config[f"检测回合{round_num}"] = {
+                result_config[f"检测回合{round_num}"].update({
                     "model": "en",
                     "only_rec": True
-                }
+                })
             
             # 如果需要橙星检测，插入橙星检测节点
             if str(round_num) in rounds_with_orangestar_restart:
