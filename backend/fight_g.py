@@ -106,7 +106,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                 "focus": f"当前：第{round_num}回合",
                 "next": next_list,
                 "on_error": ["抄作业点左上角重开"],
-                "timeout": 7000,
+                "timeout": 3000,
                 "post_delay": 2000,
             }
 
