@@ -272,7 +272,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                     "action": "Click",
                     "target": [258,833,42,39],
                     "pre_delay": 1500,
-                    "next": ["指定抄作业战斗队伍", "抄作业战斗开始"],
+                    "next": ["抄作业准备开始战斗"],
                     "timeout": 20000
                 }
             else:
@@ -284,7 +284,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                     "action": "Click",
                     "target": [581,832,41,41],
                     "pre_delay": 1500,
-                    "next": ["指定抄作业战斗队伍", "抄作业战斗开始"],
+                    "next": ["抄作业准备开始战斗"],
                     "timeout": 20000
                 }
         elif level_type == '活动有分级':
