@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Maa鸢/司命 - 勘天刻命 v1.9.2</title>
+    <title>Maa鸢/司命 - 勘天刻命 v1.9.3</title>
     <!-- 添加网站图标 -->
     <link rel="icon" href="assets/icon.ico" type="image/x-icon" />
     <!-- Element Plus 的样式 -->
@@ -926,18 +926,14 @@
                     margin-bottom: 6px;
                   "
                 >
-                  <span>版本号：v1.9.2</span>
-                  <span>更新时间：2025年6月9日</span>
+                  <span>版本号：v1.9.3</span>
+                  <span>更新时间：2025年7月26日</span>
                 </div>
                 <div>
                   <ul style="padding-left: 18px; margin: 0">
-                    <li>新增重开类型 - 没赌到橙星重开</li>
-                    <li>
-                      预适配抄作业自定义启动/提前停止功能 (需 MaaYuan v0.9.6
-                      抄作业V3)
-                    </li>
-                    <li>提高回合数识别准确率（需 MaaYuan v0.9.5 以上）</li>
-                    <li>修复部分导入导出相关的bug</li>
+                    <li>修复附加回合在某些情况下会合并到第一行的bug</li>
+                    <li>提高回合数识别准确率（需 MaaYuan v0.9.13 以上）</li>
+                    <li>适配史子眇sp技能</li>
                     <li>界面细节优化</li>
                   </ul>
                 </div>
@@ -1216,9 +1212,6 @@
                     (currentState.firstLineActions || 0) + 1;
                 }
 
-                // 保存到 LocalStorage
-                Storage.save("actions", allActions.value);
-
                 allActions.value[roundNum] = currentActions;
                 allActions.value[roundNum].isExtended =
                   currentState.isExtended || false;
@@ -1226,6 +1219,8 @@
                   currentState.firstLineActions;
                 allActions.value[roundNum].firstLineRegularActions =
                   currentState.firstLineRegularActions;
+                // 保存到 LocalStorage
+                Storage.save("actions", allActions.value);
                 console.log("保存状态:", roundNum, currentState); // 添加调试日志
 
                 // 保存新状态到localStorage
@@ -1826,15 +1821,14 @@
                     (currentState.firstLineActions || 0) + 1;
                 }
 
-                // 保存到 LocalStorage
-                Storage.save("actions", allActions.value);
-
                 // 更新本地状态
                 allActions.value[roundNum] = currentActions;
                 allActions.value[roundNum].isExtended =
                   currentState.isExtended || false;
                 allActions.value[roundNum].firstLineActions =
                   currentState.firstLineActions;
+                // 保存到 LocalStorage
+                Storage.save("actions", allActions.value);
 
                 saveStateToLocalStorage(
                   roundNum,
@@ -1927,8 +1921,6 @@
                   currentState.firstLineActions =
                     (currentState.firstLineActions || 0) + 1;
                 }
-                // 同时保存动作数组
-                Storage.save("actions", allActions.value);
 
                 // 更新本地状态
                 allActions.value[roundNum] = currentActions;
@@ -1938,6 +1930,8 @@
                   currentState.firstLineActions;
                 allActions.value[roundNum].firstLineRegularActions =
                   currentState.firstLineRegularActions;
+                // 同时保存动作数组
+                Storage.save("actions", allActions.value);
 
                 console.log("更新后状态:", currentState); // 添加调试日志
                 console.log("更新后动作:", currentActions); // 添加调试日志
