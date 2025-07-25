@@ -113,9 +113,12 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                 next_list = [f"回合{round_num}行动1"]
 
             result_config[f"检测回合{round_num}"] = {
-                "recognition": "OCR",
-                "expected": f"{round_num}",
-                "roi": [641, 43, 43, 37],
+                "recognition": "Custom",
+                "custom_recognition": "PureNum",
+                "custom_recognition_param": {
+                "roi": [641, 50, 43, 27],
+                "expected": f"{round_num}"
+                },
                 "text_doc": f"回合{round_num}",
                 "focus": f"当前：第{round_num}回合",
                 "next": next_list,
