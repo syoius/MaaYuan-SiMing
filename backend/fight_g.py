@@ -52,6 +52,12 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
 
         max_round_num = max(int(round_num) for round_num in round_actions.keys())
 
+        # 找到最后一个包含实际行动的回合，避免空回合导致的多余检测
+        max_round_with_actions = 0
+        for rn, acts in round_actions.items():
+            if any(isinstance(g, list) and len(g) > 0 for g in acts):
+                max_round_with_actions = max(max_round_with_actions, int(rn))
+
         # 读取模板文件
         template_path = get_template_path()
         with open(template_path, "r", encoding="utf-8") as f:
@@ -87,6 +93,14 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
         # 生成 JSON 配置
         result_config = {}
         for round_num, actions in round_actions.items():
+            round_has_actions = any(
+                isinstance(action_group, list) and len(action_group) > 0
+                for action_group in actions
+            )
+
+            # 如果该回合在最后一个有效回合之后且没有行动，跳过生成
+            if int(round_num) > max_round_with_actions and not round_has_actions:
+                continue
             # 修正：重开:无橙星优先走橙星检测分支
             first_action = actions[0][0] if actions and actions[0] else None
             if str(round_num) in rounds_with_orangestar_restart:
@@ -97,7 +111,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                 next_list = [restart_node]
             else:
                 next_list = [f"回合{round_num}行动1"]
-            
+
             result_config[f"检测回合{round_num}"] = {
                 "recognition": "OCR",
                 "expected": f"{round_num}",
@@ -115,7 +129,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                     "model": "en",
                     "only_rec": True
                 })
-            
+
             # 如果需要橙星检测，插入橙星检测节点
             if str(round_num) in rounds_with_orangestar_restart:
                 # 修正问题2：橙星检测成功后，应固定跳转到该回合的“行动1”，因为它是第一个被创建的实际动作节点。
@@ -131,19 +145,19 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
 
             current_action_key = None
             action_keys = []
-            
+
             # 用于跟踪实际创建的动作节点
             actual_action_counter = 1
-            
+
             for i, action_group in enumerate(actions, start=1):
                 if not (isinstance(action_group, list) and len(action_group) > 0):
                     continue
                 action = action_group[0]
-                
+
                 # 处理重开指令 - 不创建新节点，只修改前一个动作的next
                 if action.startswith('重开:'):
                     restart_type = action.split(':')[1]
-                    
+
                     # 修正问题1：重开指令应修改上一个“已创建”的动作节点，即current_action_key
                     if restart_type == "全灭":
                         # 重开:全灭：令上一个非重开动作的next内容变为["抄作业全灭重开","原内容"（如果有的话）]
@@ -154,23 +168,23 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                                 if item not in new_next:
                                     new_next.append(item)
                             set_next(result_config[current_action_key], new_next)
-                    
+
                     elif restart_type == "左上角":
                         # 重开:左上角：令上一个非重开动作的next内容变为["抄作业点左上角重开"]
                         if current_action_key and current_action_key in result_config:
                             set_next(result_config[current_action_key], ["抄作业点左上角重开"])
-                    
+
                     elif restart_type == "无橙星":
                         # 这个逻辑已在上面的橙星检测节点创建时处理，此处跳过
                         pass
-                    
+
                     # 重开指令不更新action counter和action keys，继续下一个循环
                     continue
-                
+
                 # 处理正常动作 - 使用实际的动作计数器
                 action_key = f"回合{round_num}行动{actual_action_counter}"
                 action_keys.append(action_key)
-                
+
                 # 统一处理所有动作类型
                 if action.startswith('额外:'):
                     extra_action_type = action.split(':')[1]
@@ -217,14 +231,21 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                 # 统一处理next关系
                 if current_action_key:
                     append_to_next(result_config[current_action_key], action_key)
-                
+
                 # 更新current_action_key（只有非重开动作才更新）
                 current_action_key = action_key
                 actual_action_counter += 1  # 只有非重开动作才增加计数器
 
+            # 在每个行动的 next 开头加上 "史子眇sp"
+            for node in result_config.values():
+                next_field = node.get("next")
+                if isinstance(next_field, list):
+                    # 避免重复插入
+                    node["next"] = ["史子眇sp"] + [n for n in next_field if n != "史子眇sp"]
+
             # 最后一个动作的next指向胜利或下回合检测
             if current_action_key:
-                if int(round_num) < max_round_num:
+                if int(round_num) < max_round_with_actions:
                     append_to_next(result_config[current_action_key], "抄作业战斗胜利")
                     append_to_next(result_config[current_action_key], f"检测回合{int(round_num)+1}")
                 else:
@@ -316,12 +337,6 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                 "next": ["抄作业进入关卡"],
                 "timeout": 20000
             }
-        # 在每个行动的 next 开头加上 "史子眇sp"
-        for node in result_config.values():
-            next_field = node.get("next")
-            if isinstance(next_field, list):
-                # 避免重复插入
-                node["next"] = ["史子眇sp"] + [n for n in next_field if n != "史子眇sp"]
 
         # 保存输出配置
         with open(output_path, 'w', encoding='utf-8') as f:
@@ -376,7 +391,7 @@ def reverse_config(config_data):
         if key.startswith("检测回合"):
             round_num = key.replace("检测回合", "")
             temp_data.setdefault(round_num, {'prefix': [], 'actions': []})
-            
+
             next_list = value.get("next", [])
             if not next_list: continue
 
@@ -401,7 +416,7 @@ def reverse_config(config_data):
             # 从 text_doc 还原动作码，这是最可靠的方式
             action_code = value.get('text_doc', '')
             if not action_code: continue
-            
+
             # 还原 "额外" 前缀
             if action_code.startswith('再动'):
                 action_code = f"额外:{action_code[2:]}"  # 去掉"再动"前缀
@@ -431,24 +446,24 @@ def reverse_config(config_data):
         # 关键逻辑判断：
         # 如果一个回合有常规动作(actions不为空)，那么它的前缀只可能是 "无橙星"。
         # 如果它的前缀是 "左上角重开" 或 "全灭重开"，那么它一定没有常规动作。
-        
+
         final_action_list = []
         if actions: # 如果存在常规动作
             # 只有 "无橙星" 前缀可以和常规动作共存
             if prefix and prefix[0] == ["重开:无橙星"]:
                 final_action_list.extend(prefix)
-            
+
             # 排序并添加常规动作
             sorted_actions = [action for sort_key, action in sorted(actions, key=lambda x: x[0])]
             final_action_list.extend(sorted_actions)
-        
+
         elif prefix: # 如果没有常规动作，但有前缀
             # 这就是 "仅重开" 的情况
             final_action_list.extend(prefix)
 
         if final_action_list:
             round_actions[round_num] = final_action_list
-            
+
     return {
         'actions': round_actions,
         'config_info': config_info

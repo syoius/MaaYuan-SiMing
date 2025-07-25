@@ -1004,7 +1004,7 @@
     <script>
       function initApp() {
         const { createApp, ref, onMounted, computed, watch } = Vue;
-        const API_BASE_URL = "https://cruisingcat.top/simingapi/";
+        const API_BASE_URL = "http://127.0.0.1:49481/api";
 
         // 添加 LocalStorage 相关的工具函数
         const Storage = {
@@ -1044,6 +1044,15 @@
               key.startsWith(userId)
             );
             keys.forEach((key) => localStorage.removeItem(key));
+          },
+
+          // 清除所有回合状态
+          clearRoundStates() {
+            Object.keys(localStorage).forEach((key) => {
+              if (key.startsWith("round_") && key.endsWith("_state")) {
+                localStorage.removeItem(key);
+              }
+            });
           },
         };
 
@@ -1384,6 +1393,7 @@
             const deleteRound = async (roundNum) => {
               try {
                 const currentActions = allActions.value[roundNum] || [];
+                const key = `round_${roundNum}_state`;
 
                 if (currentActions.length > 0) {
                   // 清空回合时重置所有相关计数
@@ -1393,7 +1403,6 @@
                   allActions.value[roundNum].firstLineRegularActions = 0;
 
                   // 同时清除本地存储中的状态
-                  const key = `round_${roundNum}_state`;
                   localStorage.removeItem(key);
 
                   Storage.save("actions", allActions.value);
@@ -1413,6 +1422,7 @@
                 );
 
                 delete allActions.value[roundNum];
+                localStorage.removeItem(key);
                 Storage.save("actions", allActions.value);
                 ElementPlus.ElMessage.success("删除回合成功");
               } catch (error) {
@@ -1448,7 +1458,7 @@
                         },
                       }
                     );
-
+                    Storage.clearRoundStates();
                     allActions.value = response.data.actions;
                     Storage.save("actions", allActions.value);
 
@@ -1489,6 +1499,7 @@
 
                 allActions.value = {};
                 Storage.clearUserData();
+                Storage.clearRoundStates();
 
                 localStorage.removeItem("levelType");
                 localStorage.removeItem("levelRecognitionName");
