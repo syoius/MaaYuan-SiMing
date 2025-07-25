@@ -316,7 +316,12 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                 "next": ["抄作业进入关卡"],
                 "timeout": 20000
             }
-
+        # 在每个行动的 next 开头加上 "史子眇sp"
+        for node in result_config.values():
+            next_field = node.get("next")
+            if isinstance(next_field, list):
+                # 避免重复插入
+                node["next"] = ["史子眇sp"] + [n for n in next_field if n != "史子眇sp"]
 
         # 保存输出配置
         with open(output_path, 'w', encoding='utf-8') as f:
