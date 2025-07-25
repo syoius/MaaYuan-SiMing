@@ -218,7 +218,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                         }
                     elif extra_action_type == "史子眇sp":
                         result_config[action_key] = {
-                            "text_doc": "史子眇sp",
+                            "text_doc": "额外:史子眇sp",
                             "focus": "点击史子眇sp",
                             "recognition": "TemplateMatch",
                             "template": "copilot/szm_sp_skill.png",
@@ -436,7 +436,7 @@ def reverse_config(config_data):
                 action_code = f"额外:{action_code[2:]}"  # 去掉"再动"前缀
             elif action_code in ['左侧目标', '右侧目标']:
                 action_code = f"额外:{action_code}"
-            elif action_code == '史子眇sp':
+            elif action_code == '额外:史子眇sp':
                 action_code = "额外:史子眇sp"
             elif action_code == '等待':
                 action_code = f"额外:等待:{value.get('post_delay')}"
