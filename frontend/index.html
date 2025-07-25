@@ -1170,6 +1170,46 @@
               allActions.value = savedActions;
             };
 
+            // 根据动作数据计算各回合的扩展状态和第一行动作数量
+            const computeRoundStates = (actionsData) => {
+              for (const [roundNum, roundActions] of Object.entries(
+                actionsData
+              )) {
+                const used = new Set();
+                let isExtended = false;
+                let firstLineActions = roundActions.length;
+                let firstLineRegularActions = 0;
+
+                for (let i = 0; i < roundActions.length; i++) {
+                  const act = roundActions[i][0];
+                  if (act.startsWith("重开:") || act.startsWith("额外:"))
+                    continue;
+
+                  const pos = act[0];
+                  if (used.has(pos)) {
+                    if (!isExtended) {
+                      isExtended = true;
+                      firstLineActions = i;
+                    }
+                  } else {
+                    used.add(pos);
+                    if (!isExtended) firstLineRegularActions += 1;
+                  }
+                }
+
+                roundActions.isExtended = isExtended;
+                roundActions.firstLineActions = firstLineActions;
+                roundActions.firstLineRegularActions = firstLineRegularActions;
+
+                saveStateToLocalStorage(
+                  roundNum,
+                  isExtended,
+                  firstLineActions,
+                  firstLineRegularActions
+                );
+              }
+            };
+
             const addAction = (roundNum, isExtended) => {
               try {
                 // 根据是否为扩展行选择对应的值
@@ -1460,6 +1500,7 @@
                     );
                     Storage.clearRoundStates();
                     allActions.value = response.data.actions;
+                    computeRoundStates(allActions.value);
                     Storage.save("actions", allActions.value);
 
                     if (response.data.config_info) {
