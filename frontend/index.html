@@ -1085,19 +1085,16 @@
                   const actions = Array.isArray(allActions.value[roundStr])
                     ? [...allActions.value[roundStr]]
                     : [];
-                  const isExtended =
-                    allActions.value[roundStr]?.isExtended || false;
-                  const firstLineActions =
-                    allActions.value[roundStr]?.firstLineActions ||
-                    actions.length;
-                  const firstLineRegularActions =
-                    allActions.value[roundStr]?.firstLineRegularActions || 0;
+                  const state = loadStateFromLocalStorage(
+                    roundStr,
+                    actions.length
+                  );
                   return {
                     roundNum: roundStr,
                     actions: actions,
-                    isExtended: isExtended,
-                    firstLineActions: firstLineActions,
-                    firstLineRegularActions: firstLineRegularActions,
+                    isExtended: state.isExtended,
+                    firstLineActions: state.firstLineActions,
+                    firstLineRegularActions: state.firstLineRegularActions,
                   };
                 });
             });
