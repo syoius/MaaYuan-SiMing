@@ -291,6 +291,10 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
             "timeout": 20000
         }
 
+        result_config["作业信息"] = {
+            "focus": "作业信息：由司命v1.9.3生成，需MaaYuan v0.9.13以上运行"
+        }
+
         result_config["抄作业胜利后继续"] = {
             "focus": "战斗胜利，尝试继续",
             "next": [next_node]
