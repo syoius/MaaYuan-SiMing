@@ -410,8 +410,11 @@ def reverse_config(config_data):
             round_num = key.replace("检测回合", "")
             temp_data.setdefault(round_num, {'prefix': [], 'actions': []})
 
-            next_list = value.get("next", [])
-            if not next_list: continue
+            # 部分导入文件会在 next 字段开头加入 "史子眇sp"，
+            # 这里需要过滤掉该占位符再进行后续判断
+            next_list = [n for n in value.get("next", []) if n != "史子眇sp"]
+            if not next_list:
+                continue
 
             first_next = next_list[0]
             if first_next == f"第{round_num}回合橙星检测":
