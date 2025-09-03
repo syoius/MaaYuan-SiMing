@@ -42,7 +42,7 @@ def serve_static(filename):
     return send_from_directory(resource_path('frontend/static'), filename)
 
 def run_server():
-    app.run(port=5000)
+    app.run(port=49481)
 
 def create_window():
     # 启动 Flask 服务
@@ -52,7 +52,7 @@ def create_window():
     # 创建窗口
     webview.create_window(
         'MAA鸢/司命 - 勘天篆命',
-        'http://127.0.0.1:5000',
+        'http://127.0.0.1:49481',
         width=1600,
         height=900,
         resizable=True,

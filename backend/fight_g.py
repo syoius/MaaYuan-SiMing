@@ -306,7 +306,8 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                 result_config["抄作业进入关卡-洞窟"] = {
                     "text_doc": "左",
                     "recognition": "OCR",
-                    "expected": "前往",
+                    "expected": "前",
+                    "replace": ["煎", "前"],
                     "roi" : [237,810,82,89],
                     "action": "Click",
                     "target": [258,833,42,39],
@@ -318,7 +319,8 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                 result_config["抄作业进入关卡-洞窟"] = {
                     "text_doc": "右",
                     "recognition": "OCR",
-                    "expected": "前往",
+                    "expected": "前",
+                    "replace": ["煎", "前"],
                     "roi" : [558,804,79,89],
                     "action": "Click",
                     "target": [581,832,41,41],
