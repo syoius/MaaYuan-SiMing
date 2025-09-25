@@ -127,12 +127,6 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                 "post_delay": 2000,
             }
 
-            if round_num == "6":
-                result_config[f"检测回合{round_num}"].update({
-                    "model": "en",
-                    "only_rec": True
-                })
-
             # 如果需要橙星检测，插入橙星检测节点
             if str(round_num) in rounds_with_orangestar_restart:
                 # 修正问题2：橙星检测成功后，应固定跳转到该回合的“行动1”，因为它是第一个被创建的实际动作节点。
@@ -227,6 +221,16 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                             "pre_delay": 500,
                             "post_delay": 3000,
                         }
+                    elif extra_action_type == "开自动":
+                        result_config[action_key] = {
+                            "text_doc": "开自动",
+                            "focus": "开始自动战斗",
+                            "recognition": "OCR",
+                            "expected": "手",
+                            "roi": [635, 610, 85, 95],
+                            "action": "Click",
+                            "timeout": 1800000
+                        }
                     elif extra_action_type == "史子眇sp":
                         result_config[action_key] = {
                             "text_doc": "额外:史子眇sp",
@@ -303,7 +307,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
         }
 
         result_config["作业信息"] = {
-            "focus": "[color:#D48806]作业信息：由司命v1.9.3生成，需MaaYuan v0.9.13以上运行[/color]"
+            "focus": "[color:#D48806]作业信息：由司命v1.9.4生成，需 MaaYuan v0.9.13-beta4 以上运行。如作业中包含[吕布=切换形态]则需 v0.9.13 正式版。[/color]"
         }
 
         result_config["抄作业胜利后继续"] = {
@@ -454,7 +458,7 @@ def reverse_config(config_data):
             # 还原 "额外" 前缀
             if action_code.startswith('再动'):
                 action_code = f"额外:{action_code[2:]}"  # 去掉"再动"前缀
-            elif action_code in ['左侧目标', '右侧目标', '吕布']:
+            elif action_code in ['左侧目标', '右侧目标', '吕布', '开自动']:
                 action_code = f"额外:{action_code}"
             elif action_code == '额外:史子眇sp':
                 action_code = "额外:史子眇sp"

@@ -352,10 +352,7 @@
                             label="吕布-切换形态"
                             value="吕布"
                           ></el-option>
-                          <el-option
-                            label="识别暴击/翻倍（未实装）"
-                            value="判断数字"
-                          ></el-option>
+                          <el-option label="开自动" value="开自动"></el-option>
                         </el-select>
                       </el-form-item>
                       <template
@@ -602,10 +599,7 @@
                             label="吕布-切换形态"
                             value="吕布"
                           ></el-option>
-                          <el-option
-                            label="识别暴击/翻倍（未实装）"
-                            value="判断数字"
-                          ></el-option>
+                          <el-option label="开自动" value="开自动"></el-option>
                         </el-select>
                       </el-form-item>
                       <template
@@ -947,10 +941,10 @@
                 </div>
                 <div>
                   <ul style="padding-left: 18px; margin: 0">
+                    <li>新增额外操作：吕布-切换形态，开启游戏内置自动战斗</li>
                     <li>
-                      新增额外操作：吕布-切换形态<br />（涉及以上功能的作业需
-                      MaaYuan v0.9.13 正式版，<br />不涉及该功能则
-                      v0.9.13-beta.4 以上可用）
+                      涉及以上功能的作业需 MaaYuan v0.9.13 正式版，<br />不涉及上述功能则
+                      v0.9.13-beta.4 以上可用
                     </li>
                   </ul>
                 </div>
@@ -1020,7 +1014,7 @@
     <script>
       function initApp() {
         const { createApp, ref, onMounted, computed, watch } = Vue;
-        const API_BASE_URL = "https://cruisingcat.top/simingapi/";
+        const API_BASE_URL = "http://127.0.0.1:49481/api";
 
         // 添加 LocalStorage 相关的工具函数
         const Storage = {
