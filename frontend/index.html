@@ -1038,7 +1038,7 @@
                     :value="3000"
                     :min="0"
                     :max="60000"
-                    :step="100"
+                    :step="1000"
                     size="small"
                     style="width: 120px"
                     controls-position="right"
@@ -1242,7 +1242,13 @@
             const extraActionPosition = ref({});
             const extraActionType = ref({});
             const downPosition = ref({});
-            const lantaiNav = ref(localStorage.getItem("lantaiNav") || false);
+            const lantaiNav = ref(
+              JSON.parse(localStorage.getItem("lantaiNav") ?? "false")
+            );
+            const handleLantaiNavChange = (value) => {
+              lantaiNav.value = value;
+              localStorage.setItem("lantaiNav", lantaiNav.value);
+            };
             const attackDelay = ref(
               localStorage.getItem("attackDelay") || 3000
             );
@@ -2237,7 +2243,7 @@
             });
 
             watch(lantaiNav, (newValue) => {
-              localStorage.setItem("lantaiNav", newValue);
+              localStorage.setItem("lantaiNav", JSON.stringify(val));
             });
 
             watch(attackDelay, (newValue) => {
@@ -2339,6 +2345,7 @@
               attackDelay,
               ultDelay,
               defenseDelay,
+              handleLantaiNavChange,
             };
           },
         });
