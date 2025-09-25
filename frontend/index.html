@@ -435,8 +435,32 @@
                             label="无橙星重开"
                             value="无橙星重开"
                           ></el-option>
+                          <el-option
+                            label="阵亡重开"
+                            value="阵亡重开"
+                          ></el-option>
                         </el-select>
                       </el-form-item>
+                      <template
+                        v-if="selectedRestart[row.roundNum] === '阵亡重开'"
+                      >
+                        <el-form-item style="margin: 0 10px 0 0">
+                          <el-select
+                            v-model="downPosition[row.roundNum]"
+                            placeholder="位置"
+                            size="small"
+                            style="width: 60px"
+                          >
+                            <el-option
+                              v-for="pos in [1,2,3,4,5]"
+                              :key="pos"
+                              :label="pos"
+                              :value="pos"
+                            >
+                            </el-option>
+                          </el-select>
+                        </el-form-item>
+                      </template>
                       <el-form-item style="margin: 0">
                         <el-button
                           type="danger"
@@ -682,8 +706,32 @@
                             label="无橙星重开"
                             value="无橙星重开"
                           ></el-option>
+                          <el-option
+                            label="阵亡重开"
+                            value="阵亡重开"
+                          ></el-option>
                         </el-select>
                       </el-form-item>
+                      <template
+                        v-if="selectedRestartExtended[row.roundNum] === '阵亡重开'"
+                      >
+                        <el-form-item style="margin: 0 10px 0 0">
+                          <el-select
+                            v-model="downPosition[row.roundNum]"
+                            placeholder="位置"
+                            size="small"
+                            style="width: 60px"
+                          >
+                            <el-option
+                              v-for="pos in [1,2,3,4,5]"
+                              :key="pos"
+                              :label="pos"
+                              :value="pos"
+                            >
+                            </el-option>
+                          </el-select>
+                        </el-form-item>
+                      </template>
                       <el-form-item style="margin: 0">
                         <el-button
                           type="danger"
@@ -900,13 +948,112 @@
             </div>
           </div>
 
-          <!-- 第三行：外部链接 -->
+          <!-- 第三行：全局设置 -->
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              margin-top: -30px;
+              padding: 15px;
+              background-color: #f8f9fa;
+              border-radius: 8px;
+              border: 1px solid #e9ecef;
+            "
+          >
+            <!-- 左侧：兰台导航开关 -->
+            <div style="display: flex; align-items: center; gap: 20px">
+              <span
+                style="
+                  font-weight: bold;
+                  font-size: 14px;
+                  color: #606266;
+                  margin: 0 0 3px;
+                "
+              >
+                支持兰台木桩重开<br />(需 MaaYuan v0.9.13 正式版)
+              </span>
+              <el-switch
+                v-model="lantaiNav"
+                active-text="开启"
+                inactive-text="关闭"
+                @change="handleLantaiNavChange"
+                size="default"
+              >
+              </el-switch>
+            </div>
+
+            <!-- 右侧：延迟设置 -->
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 15px;
+                flex-shrink: 0;
+              "
+            >
+              <span style="font-weight: bold; font-size: 14px; color: #606266">
+                行动后延迟 (ms)
+              </span>
+
+              <el-form :inline="true" style="margin: 0">
+                <el-form-item style="margin-bottom: 0; margin-right: 10px">
+                  <template #label>
+                    <span style="font-size: 12px; color: #909399">普攻</span>
+                  </template>
+                  <el-input-number
+                    v-model="attackDelay"
+                    :value="3000"
+                    :min="0"
+                    :max="60000"
+                    :step="1000"
+                    size="small"
+                    style="width: 120px"
+                    controls-position="right"
+                  />
+                </el-form-item>
+
+                <el-form-item style="margin-bottom: 0; margin-right: 10px">
+                  <template #label>
+                    <span style="font-size: 12px; color: #909399">大招</span>
+                  </template>
+                  <el-input-number
+                    v-model="ultDelay"
+                    :value="5000"
+                    :min="0"
+                    :max="60000"
+                    :step="1000"
+                    size="small"
+                    style="width: 120px"
+                    controls-position="right"
+                  />
+                </el-form-item>
+
+                <el-form-item style="margin-bottom: 0">
+                  <template #label>
+                    <span style="font-size: 12px; color: #909399">下拉</span>
+                  </template>
+                  <el-input-number
+                    v-model="defenseDelay"
+                    :value="3000"
+                    :min="0"
+                    :max="60000"
+                    :step="100"
+                    size="small"
+                    style="width: 120px"
+                    controls-position="right"
+                  />
+                </el-form-item>
+              </el-form>
+            </div>
+          </div>
+          <!-- 第四行：外部链接 -->
           <div
             style="
               display: flex;
               align-items: center;
               justify-content: center;
-              margin: 20px 0 0 0;
+              margin: -30px 0 0 0;
             "
           >
             <!-- 司命更新内容 Popover -->
@@ -942,9 +1089,13 @@
                 <div>
                   <ul style="padding-left: 18px; margin: 0">
                     <li>新增额外操作：吕布-切换形态，开启游戏内置自动战斗</li>
+                    <li>新增重开类型：检测到 X 号位阵亡时重开</li>
                     <li>
                       涉及以上功能的作业需 MaaYuan v0.9.13 正式版，<br />不涉及上述功能则
                       v0.9.13-beta.4 以上可用
+                    </li>
+                    <li>
+                      新增全局设置：是否支持兰台木桩重开（关闭时在未更新v0.9.13正式版时仍能正常使用作业），自定义行动延时（可根据电脑性能全局调整作业每一步的等待时间）
                     </li>
                   </ul>
                 </div>
@@ -1014,7 +1165,7 @@
     <script>
       function initApp() {
         const { createApp, ref, onMounted, computed, watch } = Vue;
-        const API_BASE_URL = "https://cruisingcat.top/simingapi/";
+        const API_BASE_URL = "http://127.0.0.1:49481/api";
 
         // 添加 LocalStorage 相关的工具函数
         const Storage = {
@@ -1090,6 +1241,15 @@
             const caveType = ref(localStorage.getItem("caveType") || "");
             const extraActionPosition = ref({});
             const extraActionType = ref({});
+            const downPosition = ref({});
+            const lantaiNav = ref(localStorage.getItem("lantaiNav") || false);
+            const attackDelay = ref(
+              localStorage.getItem("attackDelay") || 3000
+            );
+            const ultDelay = ref(localStorage.getItem("ultDelay") || 5000);
+            const defenseDelay = ref(
+              localStorage.getItem("defenseDelay") || 3000
+            );
             const waitTime = ref({});
             const tableData = computed(() => {
               return Object.keys(allActions.value)
@@ -1519,6 +1679,12 @@
                         response.data.config_info.level_recognition_name;
                       difficulty.value = response.data.config_info.difficulty;
                       caveType.value = response.data.config_info.cave_type;
+                      lantaiNav.value = response.data.config_info.lantai_nav;
+                      attackDelay.value =
+                        response.data.config_info.attack_delay;
+                      ultDelay.value = response.data.config_info.ult_delay;
+                      defenseDelay.value =
+                        response.data.config_info.defense_delay;
                     }
 
                     ElementPlus.ElMessage.success("导入成功");
@@ -1626,6 +1792,10 @@
                   difficulty: difficulty.value,
                   cave_type: caveType.value,
                   actions: allActions.value,
+                  lantai_nav: lantaiNav.value,
+                  attack_delay: attackDelay.value,
+                  ult_delay: ultDelay.value,
+                  defense_delay: defenseDelay.value,
                 });
 
                 // 创建Blob对象
@@ -1840,6 +2010,17 @@
                   return;
                 }
 
+                // 如果是阵亡重开，检查位置和动作类型是否已选择
+                if (restartType === "阵亡重开") {
+                  const position = downPosition.value[roundNum];
+                  if (!position) {
+                    ElementPlus.ElMessage.warning(
+                      "请选择检测密探是否阵亡的具体位置"
+                    );
+                    return;
+                  }
+                }
+
                 const currentActions = Array.isArray(allActions.value[roundNum])
                   ? [...allActions.value[roundNum]]
                   : [];
@@ -1867,6 +2048,8 @@
                       ? "左上角"
                       : restartType === "无橙星重开"
                       ? "无橙星"
+                      : restartType === "阵亡重开"
+                      ? `检测${downPosition.value[roundNum]}号位阵亡`
                       : restartType
                   }`,
                 ];
@@ -1906,6 +2089,7 @@
                 } else {
                   selectedRestart.value[roundNum] = "";
                 }
+                downPosition.value[roundNum] = "";
 
                 ElementPlus.ElMessage.success("添加重开成功");
               } catch (error) {
@@ -2012,13 +2196,13 @@
                   selectedExtraActionsExtended.value[roundNum] = "";
                 } else {
                   selectedExtraActions.value[roundNum] = "";
-                  if (extraAction === "再次行动") {
-                    extraActionPosition.value[roundNum] = "";
-                    extraActionType.value[roundNum] = "";
-                  }
-                  if (extraAction === "等待") {
-                    waitTime.value[roundNum] = "";
-                  }
+                }
+                if (extraAction === "再次行动") {
+                  extraActionPosition.value[roundNum] = "";
+                  extraActionType.value[roundNum] = "";
+                }
+                if (extraAction === "等待") {
+                  waitTime.value[roundNum] = "";
                 }
 
                 ElementPlus.ElMessage.success("添加额外操作成功");
@@ -2052,8 +2236,28 @@
               localStorage.setItem("extraActionPosition", newValue);
             });
 
+            watch(lantaiNav, (newValue) => {
+              localStorage.setItem("lantaiNav", newValue);
+            });
+
+            watch(attackDelay, (newValue) => {
+              localStorage.setItem("attackDelay", newValue);
+            });
+
+            watch(ultDelay, (newValue) => {
+              localStorage.setItem("ultDelay", newValue);
+            });
+
+            watch(defenseDelay, (newValue) => {
+              localStorage.setItem("defenseDelay", newValue);
+            });
+
             watch(extraActionType, (newValue) => {
               localStorage.setItem("extraActionType", newValue);
+            });
+
+            watch(downPosition, (newValue) => {
+              localStorage.SetItem("downPosition", newValue);
             });
 
             watch(waitTime, (newValue) => {
@@ -2129,7 +2333,12 @@
               caveType,
               extraActionPosition,
               extraActionType,
+              downPosition,
               waitTime,
+              lantaiNav,
+              attackDelay,
+              ultDelay,
+              defenseDelay,
             };
           },
         });
