@@ -474,10 +474,15 @@ def reverse_config(config_data):
         'defense_delay':''
     }
 
-    delay_info = config_data.get("抄作业自定义延时",{})
-    config_info['attack_delay'] = delay_info['attack_delay']
-    config_info['ult_delay'] = delay_info['ult_delay']
-    config_info['defense_delay'] = delay_info['defense_delay']
+    if config_data.get("抄作业自定义延时",{}):
+        delay_info = config_data.get("抄作业自定义延时",{})
+        config_info['attack_delay'] = delay_info['attack_delay']
+        config_info['ult_delay'] = delay_info['ult_delay']
+        config_info['defense_delay'] = delay_info['defense_delay']
+    else:
+        config_info['attack_delay'] = '3000'
+        config_info['ult_delay'] = '5000'
+        config_info['defense_delay'] = '3000'
 
     # 1. 提取关卡元信息 (此部分逻辑正确，保持不变)
     restart_node = config_data.get("抄作业点左上角重开", {})
