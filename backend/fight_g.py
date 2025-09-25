@@ -45,7 +45,23 @@ def get_downposition(text):
     match = re.search(r'(\d+)号位阵亡', text)
     return int(match.group(1)) if match else None
 
-def generate_config(input_path, output_path, level_type='', level_recognition_name='', difficulty='', cave_type='', lantai_nav='', attack_delay='',ultdelay='',defense_delay=''):
+def apply_custom_delays(action_templates, attack_delay, ult_delay, defense_delay):
+    def update_delay(keyword, delay_value):
+        if not delay_value:
+            return
+        try:
+            delay = int(delay_value)
+        except (TypeError, ValueError):
+            return
+        for key, value in action_templates.items():
+            if key.endswith(keyword) and isinstance(value, dict) and "post_delay" in value:
+                value["post_delay"] = delay
+
+    update_delay("普攻", attack_delay)
+    update_delay("上拉", ult_delay)
+    update_delay("下拉", defense_delay)
+
+def generate_config(input_path, output_path, level_type='', level_recognition_name='', difficulty='', cave_type='', lantai_nav='', attack_delay='',ult_delay='',defense_delay=''):
     """生成配置文件"""
     try:
         # 读取输入配置
@@ -67,6 +83,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
         template_path = get_template_path()
         with open(template_path, "r", encoding="utf-8") as f:
             action_templates = json.load(f)
+        apply_custom_delays(action_templates, attack_delay, ult_delay, defense_delay)
 
         # 将操作指令转换为行动配置
         def get_action(action_code):
@@ -366,6 +383,12 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
             "next": [next_node]
         }
 
+        result_config["抄作业自定义延时"] = {
+            "attack_delay": attack_delay,
+            "ult_delay": ult_delay,
+            "defense_delay": defense_delay
+        }
+
         # 根据关卡类别和识别名称设置对应的导航节点
         if level_type == '洞窟':
             if cave_type == '左':
@@ -450,6 +473,11 @@ def reverse_config(config_data):
         'ult_delay': '',
         'defense_delay':''
     }
+
+    delay_info = config_data.get("抄作业自定义延时",{})
+    config_info['attack_delay'] = delay_info['attack_delay']
+    config_info['ult_delay'] = delay_info['ult_delay']
+    config_info['defense_delay'] = delay_info['defense_delay']
 
     # 1. 提取关卡元信息 (此部分逻辑正确，保持不变)
     restart_node = config_data.get("抄作业点左上角重开", {})
