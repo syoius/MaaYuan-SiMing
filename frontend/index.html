@@ -1004,10 +1004,11 @@
                   <el-input-number
                     v-model="attackDelay"
                     :value="3000"
-                    :min="0"
+                    :min="1000"
                     :max="60000"
                     :step="1000"
                     size="small"
+                    placeholder="默认3000"
                     style="width: 120px"
                     controls-position="right"
                   />
@@ -1020,10 +1021,11 @@
                   <el-input-number
                     v-model="ultDelay"
                     :value="5000"
-                    :min="0"
+                    :min="3000"
                     :max="60000"
                     :step="1000"
                     size="small"
+                    placeholder="默认5000"
                     style="width: 120px"
                     controls-position="right"
                   />
@@ -1036,10 +1038,11 @@
                   <el-input-number
                     v-model="defenseDelay"
                     :value="3000"
-                    :min="0"
+                    :min="1000"
                     :max="60000"
                     :step="1000"
                     size="small"
+                    placeholder="默认3000"
                     style="width: 120px"
                     controls-position="right"
                   />
@@ -1248,6 +1251,7 @@
             const handleLantaiNavChange = (value) => {
               lantaiNav.value = value;
               localStorage.setItem("lantaiNav", lantaiNav.value);
+              console.log("lantaiNav状态:", lantaiNav.value);
             };
             const attackDelay = ref(
               localStorage.getItem("attackDelay") || 3000
@@ -1798,10 +1802,10 @@
                   difficulty: difficulty.value,
                   cave_type: caveType.value,
                   actions: allActions.value,
-                  lantai_nav: lantaiNav.value,
-                  attack_delay: attackDelay.value,
-                  ult_delay: ultDelay.value,
-                  defense_delay: defenseDelay.value,
+                  lantai_nav: JSON.stringify(lantaiNav.value),
+                  attack_delay: JSON.stringify(attackDelay.value),
+                  ult_delay: JSON.stringify(ultDelay.value),
+                  defense_delay: JSON.stringify(defenseDelay.value),
                 });
 
                 // 创建Blob对象
@@ -2242,9 +2246,13 @@
               localStorage.setItem("extraActionPosition", newValue);
             });
 
-            watch(lantaiNav, (newValue) => {
-              localStorage.setItem("lantaiNav", JSON.stringify(val));
-            });
+            watch(
+              lantaiNav,
+              (newVal) => {
+                localStorage.setItem("lantaiNav", JSON.stringify(newVal));
+              },
+              { immediate: false }
+            );
 
             watch(attackDelay, (newValue) => {
               localStorage.setItem("attackDelay", newValue);

@@ -328,7 +328,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
         else:
             next_node = "抄作业找到关卡-OCR"
 
-        if lantai_nav:
+        if lantai_nav == 'true':
             result_config["抄作业点左上角重开"] = {
                 "recognition": "TemplateMatch",
                 "template": "back.png",
@@ -336,7 +336,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                 "threshold": 0.5,
                 "roi" : [6,8,123,112],
                 "action": "Click",
-                "pre_delay": 2000,
+                "pre_delay": 500,
                 "post_delay": 2000,
                 "next": ["抄作业确定左上角重开", "抄作业退出兰台木桩", next_node],
                 "focus": "正在尝试点左上角重开",
@@ -350,7 +350,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                 "threshold": 0.5,
                 "roi" : [6,8,123,112],
                 "action": "Click",
-                "pre_delay": 2000,
+                "pre_delay": 500,
                 "post_delay": 2000,
                 "next": ["抄作业确定左上角重开", next_node],
                 "focus": "正在尝试点左上角重开",
