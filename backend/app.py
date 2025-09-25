@@ -200,6 +200,10 @@ def export_config():
         level_recognition_name = data.get('level_recognition_name', '')
         difficulty = data.get('difficulty', '')
         cave_type = data.get('cave_type', '')
+        lantai_nav = data.get('lantai_nav', '')
+        attack_delay = data.get('attack_delay', '')
+        ult_delay = data.get('ult_delay', '')
+        defense_delay = data.get('defense_delay', '')
         actions = data.get('actions', {})  # 从请求中获取动作数据
 
         # 生成唯一的输出文件名
@@ -227,19 +231,23 @@ def export_config():
             if getattr(sys, 'frozen', False):
                 # 打包环境的处理逻辑
                 fight_g.generate_config(
-                    temp_input.name, 
+                    temp_input.name,
                     temp_output.name,
                     level_type,
                     level_recognition_name,
                     difficulty,
-                    cave_type
+                    cave_type,
+                    lantai_nav,
+                    attack_delay,
+                    ult_delay,
+                    defense_delay,
                 )
             else:
                 # 开发环境下运行脚本
                 python_executable = sys.executable
                 result = subprocess.run(
                     [python_executable, script_path, temp_input.name, temp_output.name,
-                     level_type, level_recognition_name, difficulty, cave_type],
+                     level_type, level_recognition_name, difficulty, cave_type, lantai_nav, attack_delay, ult_delay, defense_delay],
                     capture_output=True,
                     text=True,
                     cwd=os.path.dirname(script_path)

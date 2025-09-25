@@ -1,6 +1,7 @@
 import json
 import os
 import sys
+import re
 
 def get_data_dir():
     """获取数据目录"""
@@ -40,7 +41,27 @@ def get_action_focus(action_code):
     }
     return f"{pos_map.get(pos, pos)}{act_map.get(act, act)}"
 
-def generate_config(input_path, output_path, level_type='', level_recognition_name='', difficulty='', cave_type=''):
+def get_downposition(text):
+    match = re.search(r'(\d+)号位阵亡', text)
+    return int(match.group(1)) if match else None
+
+def apply_custom_delays(action_templates, attack_delay, ult_delay, defense_delay):
+    def update_delay(keyword, delay_value):
+        if not delay_value:
+            return
+        try:
+            delay = int(delay_value)
+        except (TypeError, ValueError):
+            return
+        for key, value in action_templates.items():
+            if key.endswith(keyword) and isinstance(value, dict) and "post_delay" in value:
+                value["post_delay"] = delay
+
+    update_delay("普攻", attack_delay)
+    update_delay("上拉", ult_delay)
+    update_delay("下拉", defense_delay)
+
+def generate_config(input_path, output_path, level_type='', level_recognition_name='', difficulty='', cave_type='', lantai_nav='', attack_delay='',ult_delay='',defense_delay=''):
     """生成配置文件"""
     try:
         # 读取输入配置
@@ -62,6 +83,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
         template_path = get_template_path()
         with open(template_path, "r", encoding="utf-8") as f:
             action_templates = json.load(f)
+        apply_custom_delays(action_templates, attack_delay, ult_delay, defense_delay)
 
         # 将操作指令转换为行动配置
         def get_action(action_code):
@@ -105,6 +127,8 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
             first_action = actions[0][0] if actions and actions[0] else None
             if str(round_num) in rounds_with_orangestar_restart:
                 next_list = [f"第{round_num}回合橙星检测"]
+            elif first_action and ('检测' in first_action):
+                next_list = [f"回合{round_num}行动1"]
             elif first_action and first_action.startswith('重开:'):
                 restart_type = first_action.split(':')[1]
                 restart_node = f"抄作业{restart_type}重开" if restart_type == "全灭" else f"抄作业点左上角重开"
@@ -151,7 +175,34 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                     continue
                 action = action_group[0]
 
+                # 拦截阵亡检测类型的重开
+                if '重开:检测' in action:
+                    # 视为正常动作
+                    action_key = f"回合{round_num}行动{actual_action_counter}"
+                    action_keys.append(action_key)
+
+                    downpos = get_downposition(action)
+                    result_config[action_key] = {
+                        "text_doc": str(downpos) + "号位阵亡检测",
+                        "action": "Custom",
+                        "custom_action": "DownRestart",
+                        "custom_action_param": {
+                            "node": action_key,
+                            "position": downpos
+                        }
+                    }
+                    # 提前处理next关系
+                    if current_action_key:
+                        append_to_next(result_config[current_action_key], action_key)
+
+                    # 更新current_action_key
+                    current_action_key = action_key
+                    actual_action_counter += 1
+                    # 避开常规重开指令的处理
+                    continue
+
                 # 处理重开指令 - 不创建新节点，只修改前一个动作的next
+                # todo：重开都改为由agent去做pipeline override，框架规范为正常/额外动作
                 if action.startswith('重开:'):
                     restart_type = action.split(':')[1]
 
@@ -173,6 +224,8 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
 
                     elif restart_type == "无橙星":
                         # 这个逻辑已在上面的橙星检测节点创建时处理，此处跳过
+                        pass
+                    else:
                         pass
 
                     # 重开指令不更新action counter和action keys，继续下一个循环
@@ -292,19 +345,34 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
         else:
             next_node = "抄作业找到关卡-OCR"
 
-        result_config["抄作业点左上角重开"] = {
-            "recognition": "TemplateMatch",
-            "template": "back.png",
-            "green_mask": True,
-            "threshold": 0.5,
-            "roi" : [6,8,123,112],
-            "action": "Click",
-            "pre_delay": 2000,
-            "post_delay": 2000,
-            "next": ["抄作业确定左上角重开", next_node],
-            "focus": "正在尝试点左上角重开",
-            "timeout": 20000
-        }
+        if lantai_nav == 'true':
+            result_config["抄作业点左上角重开"] = {
+                "recognition": "TemplateMatch",
+                "template": "back.png",
+                "green_mask": True,
+                "threshold": 0.5,
+                "roi" : [6,8,123,112],
+                "action": "Click",
+                "pre_delay": 500,
+                "post_delay": 2000,
+                "next": ["抄作业确定左上角重开", "抄作业退出兰台木桩", next_node],
+                "focus": "正在尝试点左上角重开",
+                "timeout": 20000
+            }
+        else:
+            result_config["抄作业点左上角重开"] = {
+                "recognition": "TemplateMatch",
+                "template": "back.png",
+                "green_mask": True,
+                "threshold": 0.5,
+                "roi" : [6,8,123,112],
+                "action": "Click",
+                "pre_delay": 500,
+                "post_delay": 2000,
+                "next": ["抄作业确定左上角重开", next_node],
+                "focus": "正在尝试点左上角重开",
+                "timeout": 20000
+            }
 
         result_config["作业信息"] = {
             "focus": "[color:#D48806]作业信息：由司命v1.9.4生成，需 MaaYuan v0.9.13-beta4 以上运行。如作业中包含[吕布=切换形态]则需 v0.9.13 正式版。[/color]"
@@ -313,6 +381,12 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
         result_config["抄作业胜利后继续"] = {
             "focus": "战斗胜利，尝试继续",
             "next": [next_node]
+        }
+
+        result_config["抄作业自定义延时"] = {
+            "attack_delay": attack_delay,
+            "ult_delay": ult_delay,
+            "defense_delay": defense_delay
         }
 
         # 根据关卡类别和识别名称设置对应的导航节点
@@ -393,8 +467,17 @@ def reverse_config(config_data):
         'level_type': '',
         'level_recognition_name': '',
         'difficulty': '',
-        'cave_type': ''
+        'cave_type': '',
+        'lantai_nav': '',
+        'attack_delay': '',
+        'ult_delay': '',
+        'defense_delay':''
     }
+
+    delay_info = config_data.get("抄作业自定义延时",{})
+    config_info['attack_delay'] = delay_info['attack_delay']
+    config_info['ult_delay'] = delay_info['ult_delay']
+    config_info['defense_delay'] = delay_info['defense_delay']
 
     # 1. 提取关卡元信息 (此部分逻辑正确，保持不变)
     restart_node = config_data.get("抄作业点左上角重开", {})
@@ -458,6 +541,8 @@ def reverse_config(config_data):
             # 还原 "额外" 前缀
             if action_code.startswith('再动'):
                 action_code = f"额外:{action_code[2:]}"  # 去掉"再动"前缀
+            elif '阵亡检测' in action_code:
+                action_code = f"重开:检测{action_code[0]}号位阵亡"
             elif action_code in ['左侧目标', '右侧目标', '吕布', '开自动']:
                 action_code = f"额外:{action_code}"
             elif action_code == '额外:史子眇sp':
@@ -511,7 +596,7 @@ def reverse_config(config_data):
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:
-        print("Usage: python fight_g.py input_path output_path [level_type] [level_recognition_name]")
+        print("Usage: python fight_g.py input_path output_path [level_type] [level_recognition_name] [difficulty] [cave_type] [lantai_nav] [attack_delay] [ult_delay] [defense_delay]")
         sys.exit(1)
 
     input_path = sys.argv[1]
@@ -520,5 +605,9 @@ if __name__ == '__main__':
     level_recognition_name = sys.argv[4] if len(sys.argv) > 4 else ''
     difficulty = sys.argv[5] if len(sys.argv) > 5 else ''
     cave_type = sys.argv[6] if len(sys.argv) > 6 else ''
+    lantai_nav = sys.argv[7] if len(sys.argv) > 7 else ''
+    attack_delay = sys.argv[8] if len(sys.argv) > 8 else ''
+    ult_delay = sys.argv[9] if len(sys.argv) >9 else ''
+    defense_delay = sys.argv[10] if len(sys.argv) > 10 else ''
 
-    generate_config(input_path, output_path, level_type, level_recognition_name, difficulty, cave_type)
+    generate_config(input_path, output_path, level_type, level_recognition_name, difficulty, cave_type, lantai_nav, attack_delay, ult_delay, defense_delay)
