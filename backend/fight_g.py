@@ -216,6 +216,17 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                             "focus": "等待"+str(wait_time)+"ms",
                             "post_delay": wait_time
                         }
+                    elif extra_action_type == "吕布":
+                        result_config[action_key] = {
+                            "text_doc": "吕布",
+                            "focus": "点击吕布-切换形态",
+                            "recognition": "TemplateMatch",
+                            "template": ["copilot/lb_l2h.png", "copilot/lb_h2l.png"],
+                            "roi": [15, 1072, 690, 95],
+                            "action": "Click",
+                            "pre_delay": 500,
+                            "post_delay": 3000,
+                        }
                     elif extra_action_type == "史子眇sp":
                         result_config[action_key] = {
                             "text_doc": "额外:史子眇sp",
@@ -443,7 +454,7 @@ def reverse_config(config_data):
             # 还原 "额外" 前缀
             if action_code.startswith('再动'):
                 action_code = f"额外:{action_code[2:]}"  # 去掉"再动"前缀
-            elif action_code in ['左侧目标', '右侧目标']:
+            elif action_code in ['左侧目标', '右侧目标', '吕布']:
                 action_code = f"额外:{action_code}"
             elif action_code == '额外:史子眇sp':
                 action_code = "额外:史子眇sp"
