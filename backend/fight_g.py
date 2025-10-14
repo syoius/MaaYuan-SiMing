@@ -61,7 +61,7 @@ def apply_custom_delays(action_templates, attack_delay, ult_delay, defense_delay
     update_delay("上拉", ult_delay)
     update_delay("下拉", defense_delay)
 
-def generate_config(input_path, output_path, level_type='', level_recognition_name='', difficulty='', cave_type='', lantai_nav='', attack_delay='',ult_delay='',defense_delay=''):
+def generate_config(input_path, output_path, level_type='', level_recognition_name='', difficulty='', cave_type='', lantai_nav='true', attack_delay='',ult_delay='',defense_delay=''):
     """生成配置文件"""
     try:
         # 读取输入配置

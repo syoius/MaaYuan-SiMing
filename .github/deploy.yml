@@ -1,0 +1,36 @@
+name: Deploy myShare Siming API
+
+on:
+  push:
+    branches:
+      - myshare
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.1.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd /home/${{ secrets.VPS_USER }}/MaaYuan-SiMing
+            echo "🔄 Pulling latest code..."
+            git pull origin myshare
+
+            echo "🐍 Activating virtual environment..."
+            source venv/bin/activate
+
+            echo "📦 Installing dependencies..."
+            pip install -r requirements.txt
+
+            echo "🚀 Restarting service..."
+            sudo systemctl restart siming-api.service
+
+            echo "✅ Deployment completed successfully!"
