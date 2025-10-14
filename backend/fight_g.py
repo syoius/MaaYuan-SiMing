@@ -375,7 +375,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
             }
 
         result_config["作业信息"] = {
-            "focus": "[color:#D48806]作业信息：由司命v1.9.4生成，需 MaaYuan v0.9.13-beta4 以上运行。如作业中包含[吕布-切换形态]、[重开-X号位阵亡检测]等则需 v0.9.13 beta-9 或正式版。[/color]"
+            "focus": "[color:#D48806]作业信息：由 MaaYuan Share 生成，需 MaaYuan v0.9.13-beta4 以上运行。如作业中包含[吕布-切换形态]、[重开-X号位阵亡检测]等则需 v0.9.13 beta-9 或正式版。[/color]"
         }
 
         result_config["抄作业胜利后继续"] = {
