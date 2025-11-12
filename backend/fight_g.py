@@ -342,40 +342,27 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
             next_node = "抄作业找到关卡-活动分级"
         elif level_type == '白鹄':
             next_node = "抄作业进入关卡-白鹄"
+        elif level_type == '兰台':
+            next_node == "抄作业进入关卡-兰台"
         else:
             next_node = "抄作业找到关卡-OCR"
 
-        if lantai_nav == 'true':
-            result_config["抄作业点左上角重开"] = {
-                "recognition": "TemplateMatch",
-                "template": "back.png",
-                "green_mask": True,
-                "threshold": 0.5,
-                "roi" : [6,8,123,112],
-                "action": "Click",
-                "pre_delay": 500,
-                "post_delay": 2000,
-                "next": ["抄作业确定左上角重开", "抄作业退出兰台木桩", next_node],
-                "focus": "正在尝试点左上角重开",
-                "timeout": 20000
-            }
-        else:
-            result_config["抄作业点左上角重开"] = {
-                "recognition": "TemplateMatch",
-                "template": "back.png",
-                "green_mask": True,
-                "threshold": 0.5,
-                "roi" : [6,8,123,112],
-                "action": "Click",
-                "pre_delay": 500,
-                "post_delay": 2000,
-                "next": ["抄作业确定左上角重开", next_node],
-                "focus": "正在尝试点左上角重开",
-                "timeout": 20000
-            }
+        result_config["抄作业点左上角重开"] = {
+            "recognition": "TemplateMatch",
+            "template": "back.png",
+            "green_mask": True,
+            "threshold": 0.5,
+            "roi" : [6,8,123,112],
+            "action": "Click",
+            "pre_delay": 500,
+            "post_delay": 2000,
+            "next": ["抄作业确定左上角重开", "抄作业退出兰台木桩", next_node],
+            "focus": "正在尝试点左上角重开",
+            "timeout": 20000
+        }
 
         result_config["作业信息"] = {
-            "focus": "[color:#D48806]作业信息：由 MaaYuan Share 生成，需 MaaYuan v0.9.13-beta4 以上运行。如作业中包含[吕布-切换形态]、[重开-X号位阵亡检测]等则需 v0.9.13 beta-9 或正式版。[/color]"
+            "focus": "[color:#D48806]作业信息：由 MaaYuan Share v25.11.12 生成，需 MaaYuan v0.9.13-beta4 以上运行。如作业中包含[吕布-切换形态]、[重开-X号位阵亡检测]等则需 v0.9.13 beta-9 或更高版本。[/color]"
         }
 
         result_config["抄作业胜利后继续"] = {
@@ -416,6 +403,59 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                     "pre_delay": 1500,
                     "next": ["抄作业准备开始战斗"],
                     "timeout": 20000
+                }
+        elif level_type = '兰台':
+            if level_recognition_name in ('诛仙阵', '戮魔阵', '奉诏讨伐'):
+                result_config["抄作业找到关卡-兰台"] = {
+                    "level": level_recognition_name,
+                    "recognition": "OCR",
+                    "expected": "切换难度",
+                    "replace": [
+                      ["難", "难"],
+                      ["換", "换"]
+                    ],
+                    "roi": [535, 1208, 180, 70],
+                    "action": "Click",
+                    "pre_delay": 500,
+                    "target": [430,1197,28,30],
+                    "next": ["抄作业准备开始战斗"]
+                },
+            elif level_recognition_name in ('千军阵', '三才阵', '北风演习'):
+                result_config["抄作业找到关卡-兰台"] = {
+                    "level": level_recognition_name,
+                    "recognition": "OCR",
+                    "expected": "切换难度",
+                    "replace": [
+                      ["難", "难"],
+                      ["換", "换"]
+                    ],
+                    "roi": [535, 1208, 180, 70],
+                    "action": "Click",
+                    "pre_delay": 500,
+                    "target": [244,1195,30,35],
+                    "next": ["抄作业准备开始战斗"]
+                }
+            else:
+                result_config["抄作业找到关卡-兰台"] = {
+                    "level": level_recognition_name,
+                    "recognition": "TemplateMatch",
+                    "template": "baihu/lantai.png",
+                    "order_by": "Vertical",
+                    "roi": [19, 318, 684, 905],
+                    "action": "Click",
+                    "pre_delay": 500,
+                    "post_delay": 500,
+                    "next": ["抄作业准备开始战斗"],
+                    "interrupt": ["抄作业-兰台确认进入关卡"],
+                    "timeout": 4000
+                }
+                result_config["抄作业-兰台确认进入关卡"] = {
+                    "recognition": "OCR",
+                    "expected": "进入",
+                    "replace": ["進", "进"],
+                    "roi": [195, 711, 334, 186],
+                    "action": "Click",
+                    "pre_delay": 500,
                 }
         elif level_type == '活动有分级':
             result_config["抄作业找到关卡-活动分级"] = {
@@ -500,6 +540,9 @@ def reverse_config(config_data):
             config_info['difficulty'] = config_data.get("抄作业选择活动分级", {}).get("expected", "")
         elif next_node == "抄作业进入关卡-白鹄":
             config_info['level_type'] = '白鹄'
+        elif next_node == "抄作业进入关卡-兰台":
+            config_info['level_type'] = '兰台'
+            config_info['level_recognition_name'] = config_data.get("抄作业找到关卡-兰台", {}).get("level", "")
         elif next_node == "抄作业找到关卡-OCR":
             config_info['level_type'] = '其他'
             config_info['level_recognition_name'] = config_data.get("抄作业找到关卡-OCR", {}).get("expected", "")
