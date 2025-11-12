@@ -328,10 +328,10 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
             # 最后一个动作的next指向胜利或下回合检测
             if current_action_key:
                 if int(round_num) < max_round_with_actions:
-                    append_to_next(result_config[current_action_key], "抄作业战斗胜利-check")
+                    append_to_next(result_config[current_action_key], "抄作业战斗胜利")
                     append_to_next(result_config[current_action_key], f"检测回合{int(round_num)+1}")
                 else:
-                    append_to_next(result_config[current_action_key], "抄作业战斗胜利-check")
+                    append_to_next(result_config[current_action_key], "抄作业战斗胜利")
 
         # 根据关卡类别设置重开后的导航节点
         if level_type == '主线':
