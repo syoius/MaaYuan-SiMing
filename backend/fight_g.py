@@ -343,7 +343,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
         elif level_type == '白鹄':
             next_node = "抄作业进入关卡-白鹄"
         elif level_type == '兰台':
-            next_node == "抄作业进入关卡-兰台"
+            next_node = "抄作业进入关卡-兰台"
         else:
             next_node = "抄作业找到关卡-OCR"
 
@@ -404,7 +404,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                     "next": ["抄作业准备开始战斗"],
                     "timeout": 20000
                 }
-        elif level_type = '兰台':
+        elif level_type == '兰台':
             if level_recognition_name in ('诛仙阵', '戮魔阵', '奉诏讨伐'):
                 result_config["抄作业找到关卡-兰台"] = {
                     "level": level_recognition_name,
