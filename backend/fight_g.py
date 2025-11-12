@@ -528,7 +528,7 @@ def reverse_config(config_data):
     restart_node = config_data.get("抄作业点左上角重开", {})
     next_nodes = restart_node.get("next", [])
     if len(next_nodes) >= 2:
-        next_node = next_nodes[1]
+        next_node = next_nodes[-1]
         if next_node == "抄作业找到关卡-主线":
             config_info['level_type'] = '主线'
         elif next_node == "抄作业进入关卡-洞窟":

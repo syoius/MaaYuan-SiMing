@@ -822,6 +822,7 @@
                         value="活动有分级"
                       ></el-option>
                       <el-option label="其他" value="其他"></el-option>
+                      <el-option label="兰台" value="兰台"></el-option>
                     </el-select>
                   </el-form-item>
 
@@ -1168,7 +1169,7 @@
     <script>
       function initApp() {
         const { createApp, ref, onMounted, computed, watch } = Vue;
-        const API_BASE_URL = "https://cruisingcat.top/simingapi/";
+        const API_BASE_URL = "http://127.0.0.1:49481/api";
 
         // 添加 LocalStorage 相关的工具函数
         const Storage = {
