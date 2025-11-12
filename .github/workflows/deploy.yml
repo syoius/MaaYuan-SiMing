@@ -25,12 +25,12 @@ jobs:
             git pull origin myshare
 
             echo "🐍 Activating virtual environment..."
-            source venv/bin/activate
+            source .venv/bin/activate
 
             echo "📦 Installing dependencies..."
             pip install -r requirements.txt
 
             echo "🚀 Restarting service..."
-            sudo systemctl restart siming-api.service
+            sudo systemctl restart maayuan-siming.service
 
             echo "✅ Deployment completed successfully!"
