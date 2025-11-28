@@ -343,7 +343,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
         elif level_type == '白鹄':
             next_node = "抄作业进入关卡-白鹄"
         elif level_type == '兰台':
-            next_node = "抄作业进入关卡-兰台"
+            next_node = "抄作业找到关卡-兰台"
         else:
             next_node = "抄作业找到关卡-OCR"
 
@@ -540,7 +540,7 @@ def reverse_config(config_data):
             config_info['difficulty'] = config_data.get("抄作业选择活动分级", {}).get("expected", "")
         elif next_node == "抄作业进入关卡-白鹄":
             config_info['level_type'] = '白鹄'
-        elif next_node == "抄作业进入关卡-兰台":
+        elif next_node == "抄作业找到关卡-兰台":
             config_info['level_type'] = '兰台'
             config_info['level_recognition_name'] = config_data.get("抄作业找到关卡-兰台", {}).get("level", "")
         elif next_node == "抄作业找到关卡-OCR":
