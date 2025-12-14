@@ -419,7 +419,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                     "pre_delay": 500,
                     "target": [430,1197,28,30],
                     "next": ["抄作业准备开始战斗"]
-                },
+                }
             elif level_recognition_name in ('千军阵', '三才阵', '北风演习'):
                 result_config["抄作业找到关卡-兰台"] = {
                     "level": level_recognition_name,
