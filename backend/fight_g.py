@@ -61,6 +61,41 @@ def apply_custom_delays(action_templates, attack_delay, ult_delay, defense_delay
     update_delay("上拉", ult_delay)
     update_delay("下拉", defense_delay)
 
+def deduplicate_routes(config):
+    """去重 next/on_error，避免重复路由"""
+    for node in config.values():
+        if not isinstance(node, dict):
+            continue
+        routes = {}
+        for key in ("next", "on_error"):
+            value = node.get(key)
+            if isinstance(value, list):
+                seen = set()
+                deduped = []
+                for item in value:
+                    if item not in seen:
+                        deduped.append(item)
+                        seen.add(item)
+                routes[key] = deduped
+            else:
+                routes[key] = value
+
+        taken = set()
+        for key in ("next", "on_error"):
+            value = routes.get(key)
+            if not isinstance(value, list):
+                continue
+            filtered = []
+            for item in value:
+                if item in taken:
+                    continue
+                filtered.append(item)
+                taken.add(item)
+            routes[key] = filtered
+
+        for key, value in routes.items():
+            if isinstance(value, list):
+                node[key] = value
 def generate_config(input_path, output_path, level_type='', level_recognition_name='', difficulty='', cave_type='', lantai_nav='true', attack_delay='',ult_delay='',defense_delay=''):
     """生成配置文件"""
     try:
@@ -486,6 +521,9 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                 "next": ["抄作业进入关卡"],
                 "timeout": 20000
             }
+
+        # 路由去重，防止 next/interrupt/on_error 目标重复
+        deduplicate_routes(result_config)
 
         # 保存输出配置
         with open(output_path, 'w', encoding='utf-8') as f:
