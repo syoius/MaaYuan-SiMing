@@ -176,6 +176,7 @@ class ActionService:
         Returns:
             dict: 包含 content 和 filename 的字典
         """
+        print(f"[DEBUG] ActionService.export_config - request.level_type: '{request.level_type}'")
         # 构建 LevelConfig
         level_config = LevelConfig(
             level_type=request.level_type,
@@ -187,6 +188,7 @@ class ActionService:
             ult_delay=request.ult_delay or None,
             defense_delay=request.defense_delay or None,
         )
+        print(f"[DEBUG] ActionService.export_config - level_config.level_type: '{level_config.level_type}'")
 
         # 生成配置
         config = self.config_generator.generate(request.actions, level_config)

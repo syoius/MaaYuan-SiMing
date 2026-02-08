@@ -183,7 +183,9 @@ def add_restart():
 def export_config():
     """导出生成的配置文件"""
     try:
+        print(f"[DEBUG] 接收到的原始请求: {request.json}")
         data = ExportRequest(**request.json)
+        print(f"[DEBUG] ExportRequest解析后 - level_type: '{data.level_type}'")
         result = action_service.export_config(data)
 
         # 添加唯一ID到文件名

@@ -98,6 +98,12 @@ class ConfigGenerator:
         """设置节点的 next 字段"""
         node["next"] = values.copy()
 
+    def _get_route_key(self, item):
+        """获取路由项的标识键（处理字符串和字典类型的节点属性）"""
+        if isinstance(item, dict):
+            return item.get('name', str(item))
+        return item
+
     def _deduplicate_routes(self, config: dict) -> None:
         """路由去重"""
         for node in config.values():
@@ -109,7 +115,13 @@ class ConfigGenerator:
                 value = node.get(key)
                 if isinstance(value, list):
                     seen = set()
-                    routes[key] = [item for item in value if not (item in seen or seen.add(item))]
+                    deduped = []
+                    for item in value:
+                        route_key = self._get_route_key(item)
+                        if route_key not in seen:
+                            deduped.append(item)
+                            seen.add(route_key)
+                    routes[key] = deduped
                 else:
                     routes[key] = value
 
@@ -117,7 +129,12 @@ class ConfigGenerator:
             for key in ("next", "on_error"):
                 value = routes.get(key)
                 if isinstance(value, list):
-                    filtered = [item for item in value if not (item in taken or taken.add(item))]
+                    filtered = []
+                    for item in value:
+                        route_key = self._get_route_key(item)
+                        if route_key not in taken:
+                            filtered.append(item)
+                            taken.add(route_key)
                     routes[key] = filtered
 
             for key, value in routes.items():
@@ -200,6 +217,7 @@ class ConfigGenerator:
         Returns:
             MAA 配置字典
         """
+        print(f"[DEBUG] ConfigGenerator.generate - config.level_type: '{config.level_type}'")
         templates = self._load_templates()
         self._apply_custom_delays(templates, config)
 
@@ -411,9 +429,12 @@ class ConfigGenerator:
         }
 
         # 关卡特定导航节点
+        print(f"[DEBUG] _add_navigation_nodes - level_config.level_type: '{level_config.level_type}'")
         if level_config.level_type == '洞窟':
+            print("[DEBUG] 进入洞窟分支")
             self._add_cave_nodes(config, level_config, next_node)
         elif level_config.level_type == '兰台':
+            print("[DEBUG] 进入兰台分支")
             self._add_lantai_nodes(config, level_config, next_node)
         elif level_config.level_type == '活动有分级':
             self._add_event_nodes(config, level_config, next_node)
@@ -439,15 +460,18 @@ class ConfigGenerator:
     def _add_lantai_nodes(self, config: dict, level_config: LevelConfig, next_node: str) -> None:
         """添加兰台导航节点"""
         level_name = level_config.level_recognition_name
+        print(f"[DEBUG] _add_lantai_nodes - level_name: '{level_name}'")
         simple_levels = {'诛仙阵', '戮魔阵', '奉诏讨伐'}
         other_simple = {'千军阵', '三才阵', '北风演习'}
 
         if level_name in simple_levels:
+            print(f"[DEBUG] 进入简单关卡分支 (诛仙阵/戮魔阵/奉诏讨伐)")
             target = [430, 1197, 28, 30]
         elif level_name in other_simple:
+            print(f"[DEBUG] 进入其他简单关卡分支 (千军阵/三才阵/北风演习)")
             target = [244, 1195, 30, 35]
         else:
-            # 复杂兰台关卡
+            print(f"[DEBUG] 进入复杂兰台关卡分支 (生成 jump_back 节点)")
             config["抄作业找到关卡-兰台"] = {
                 "level": level_name,
                 "recognition": "TemplateMatch",
@@ -457,8 +481,13 @@ class ConfigGenerator:
                 "action": "Click",
                 "pre_delay": 500,
                 "post_delay": 500,
-                "next": ["抄作业准备开始战斗"],
-                "interrupt": ["抄作业-兰台确认进入关卡"],
+                "next": [
+                    "抄作业准备开始战斗",
+                    {
+                        "name": "抄作业-兰台确认进入关卡",
+                        "jump_back": True
+                    }
+                ],
                 "timeout": 4000
             }
             config["抄作业-兰台确认进入关卡"] = {
@@ -468,6 +497,7 @@ class ConfigGenerator:
                 "roi": [195, 711, 334, 186],
                 "action": "Click",
                 "pre_delay": 500,
+                "next": ["抄作业找到关卡-兰台"]
             }
             return
 

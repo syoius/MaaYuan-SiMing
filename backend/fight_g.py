@@ -61,6 +61,12 @@ def apply_custom_delays(action_templates, attack_delay, ult_delay, defense_delay
     update_delay("上拉", ult_delay)
     update_delay("下拉", defense_delay)
 
+def _get_route_key(item):
+    """获取路由项的标识键（处理字符串和字典类型的节点属性）"""
+    if isinstance(item, dict):
+        return item.get('name', str(item))
+    return item
+
 def deduplicate_routes(config):
     """去重 next/on_error，避免重复路由"""
     for node in config.values():
@@ -73,9 +79,10 @@ def deduplicate_routes(config):
                 seen = set()
                 deduped = []
                 for item in value:
-                    if item not in seen:
+                    route_key = _get_route_key(item)
+                    if route_key not in seen:
                         deduped.append(item)
-                        seen.add(item)
+                        seen.add(route_key)
                 routes[key] = deduped
             else:
                 routes[key] = value
@@ -87,10 +94,11 @@ def deduplicate_routes(config):
                 continue
             filtered = []
             for item in value:
-                if item in taken:
+                route_key = _get_route_key(item)
+                if route_key in taken:
                     continue
                 filtered.append(item)
-                taken.add(item)
+                taken.add(route_key)
             routes[key] = filtered
 
         for key, value in routes.items():
@@ -480,8 +488,13 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                     "action": "Click",
                     "pre_delay": 500,
                     "post_delay": 500,
-                    "next": ["抄作业准备开始战斗"],
-                    "interrupt": ["抄作业-兰台确认进入关卡"],
+                    "next": [
+                        "抄作业准备开始战斗",
+                        {
+                            "name": "抄作业-兰台确认进入关卡",
+                            "jump_back": True
+                        }
+                    ],
                     "timeout": 4000
                 }
                 result_config["抄作业-兰台确认进入关卡"] = {
@@ -491,6 +504,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                     "roi": [195, 711, 334, 186],
                     "action": "Click",
                     "pre_delay": 500,
+                    "next": ["抄作业找到关卡-兰台"]
                 }
         elif level_type == '活动有分级':
             result_config["抄作业找到关卡-活动分级"] = {
