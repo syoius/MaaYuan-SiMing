@@ -173,3 +173,4 @@ backend/data/*
 .claude
 CLAUDE.md
 operations-log.md
+.ace-tool/

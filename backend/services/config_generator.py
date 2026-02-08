@@ -319,9 +319,9 @@ class ConfigGenerator:
                 action_key = f"回合{round_num}行动{action_counter}"
 
                 if action.startswith('额外:'):
-                    config = self._get_extra_action_config(action, action_key)
-                    if config:
-                        result_config[action_key] = config
+                    extra_config = self._get_extra_action_config(action, action_key)
+                    if extra_config:
+                        result_config[action_key] = extra_config
                     else:
                         # 再动动作
                         _, action_code = action.split(':')
