@@ -54,7 +54,7 @@ class ConfigGenerator:
         将动作代码转换为配置
 
         Args:
-            action_code: 如 "1普", "2大"
+            action_code: 如 "1普", "2大", "1sp"
             templates: 动作模板字典
 
         Returns:
@@ -63,11 +63,12 @@ class ConfigGenerator:
         if len(action_code) < 2:
             return None
         position = action_code[0]
-        action_type = action_code[1]
+        action_type = action_code[1:]
         key_map = {
             "普": "普攻",
             "大": "上拉",
-            "下": "下拉"
+            "下": "下拉",
+            "sp": "SP"
         }
         key = f"{position}号位{key_map.get(action_type, action_type)}"
         return templates.get(key)
@@ -77,9 +78,9 @@ class ConfigGenerator:
         if not action_code or len(action_code) < 2:
             return action_code
         pos = action_code[0]
-        act = action_code[1]
+        act = action_code[1:]
         pos_map = {'1': '1号位', '2': '2号位', '3': '3号位', '4': '4号位', '5': '5号位'}
-        act_map = {'普': '普攻', '大': '大招', '下': '防御'}
+        act_map = {'普': '普攻', '大': '大招', '下': '防御', 'sp': 'SP'}
         return f"{pos_map.get(pos, pos)}{act_map.get(act, act)}"
 
     def _get_downposition(self, text: str) -> Optional[int]:
@@ -637,6 +638,10 @@ class ConfigGenerator:
                     action_code = f"额外:{action_code}"
                 elif action_code == '额外:史子眇sp':
                     action_code = "额外:史子眇sp"
+                elif len(action_code) >= 2 and action_code[0] in '12345' and action_code[1:] == 'sp':
+                    # 基础 SP 动作，如 "1sp", "2sp"
+                    sp_position = action_code[0]
+                    action_code = f"额外:{sp_position}SP"
                 elif action_code == '等待':
                     action_code = f"额外:等待:{value.get('post_delay', 0)}"
 

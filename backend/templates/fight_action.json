@@ -99,5 +99,35 @@
     "action": "Click",
     "target": [646, 1060, 5, 5],
     "post_delay": 3000
+  },
+  "1号位SP": {
+    "action": "Click",
+    "target": [76, 1114, 17, 18],
+    "pre_delay": 500,
+    "post_delay": 3000
+  },
+  "2号位SP": {
+    "action": "Click",
+    "target": [214, 1116, 23, 13],
+    "pre_delay": 500,
+    "post_delay": 3000
+  },
+  "3号位SP": {
+    "action": "Click",
+    "target": [355, 1118, 17, 10],
+    "pre_delay": 500,
+    "post_delay": 3000
+  },
+  "4号位SP": {
+    "action": "Click",
+    "target": [498, 1115, 13, 16],
+    "pre_delay": 500,
+    "post_delay": 3000
+  },
+  "5号位SP": {
+    "action": "Click",
+    "target": [634, 1118, 16, 11],
+    "pre_delay": 500,
+    "post_delay": 3000
   }
 }

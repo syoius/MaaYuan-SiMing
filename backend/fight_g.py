@@ -306,17 +306,6 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                             "focus": "等待"+str(wait_time)+"ms",
                             "post_delay": wait_time
                         }
-                    elif extra_action_type == "吕布":
-                        result_config[action_key] = {
-                            "text_doc": "吕布",
-                            "focus": "点击吕布-切换形态",
-                            "recognition": "TemplateMatch",
-                            "template": ["copilot/lb_l2h.png", "copilot/lb_h2l.png"],
-                            "roi": [15, 1072, 690, 95],
-                            "action": "Click",
-                            "pre_delay": 500,
-                            "post_delay": 3000,
-                        }
                     elif extra_action_type == "开自动":
                         result_config[action_key] = {
                             "text_doc": "开自动",
@@ -327,16 +316,50 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                             "action": "Click",
                             "timeout": 1800000
                         }
-                    elif extra_action_type == "史子眇sp":
+                    elif extra_action_type == "1SP":
                         result_config[action_key] = {
-                            "text_doc": "额外:史子眇sp",
-                            "focus": "点击史子眇sp",
-                            "recognition": "TemplateMatch",
-                            "template": "copilot/szm_sp_skill.png",
-                            "roi": [15, 1072, 690, 95],
+                            "text_doc": "1号位SP",
+                            "focus": "点击1号位SP技能",
                             "action": "Click",
+                            "target": [76, 1114, 17, 18],
                             "pre_delay": 500,
-                            "post_delay": 5000
+                            "post_delay": 3000
+                        }
+                    elif extra_action_type == "2SP":
+                        result_config[action_key] = {
+                            "text_doc": "2号位SP",
+                            "focus": "点击2号位SP技能",
+                            "action": "Click",
+                            "target": [214, 1116, 23, 13],
+                            "pre_delay": 500,
+                            "post_delay": 3000
+                        }
+                    elif extra_action_type == "3SP":
+                        result_config[action_key] = {
+                            "text_doc": "3号位SP",
+                            "focus": "点击3号位SP技能",
+                            "action": "Click",
+                            "target": [355, 1118, 17, 10],
+                            "pre_delay": 500,
+                            "post_delay": 3000
+                        }
+                    elif extra_action_type == "4SP":
+                        result_config[action_key] = {
+                            "text_doc": "4号位SP",
+                            "focus": "点击4号位SP技能",
+                            "action": "Click",
+                            "target": [498, 1115, 13, 16],
+                            "pre_delay": 500,
+                            "post_delay": 3000
+                        }
+                    elif extra_action_type == "5SP":
+                        result_config[action_key] = {
+                            "text_doc": "5号位SP",
+                            "focus": "点击5号位SP技能",
+                            "action": "Click",
+                            "target": [634, 1118, 16, 11],
+                            "pre_delay": 500,
+                            "post_delay": 3000
                         }
                     else:
                         # 解析再次行动的位置和动作类型
@@ -360,13 +383,6 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                 # 更新current_action_key（只有非重开动作才更新）
                 current_action_key = action_key
                 actual_action_counter += 1  # 只有非重开动作才增加计数器
-
-            # 在每个行动的 next 开头加上 "史子眇sp"
-            for node in result_config.values():
-                next_field = node.get("next")
-                if isinstance(next_field, list):
-                    # 避免重复插入
-                    node["next"] = ["史子眇sp"] + [n for n in next_field if n != "史子眇sp"]
 
             # 最后一个动作的next指向胜利或下回合检测
             if current_action_key:
@@ -405,7 +421,7 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
         }
 
         result_config["作业信息"] = {
-            "focus": "[color:#D48806]作业信息：由 MaaYuan Share v25.11.12 生成，需 MaaYuan v0.9.13-beta4 以上运行。如作业中包含[吕布-切换形态]、[重开-X号位阵亡检测]等则需 v0.9.13 beta-9 或更高版本。[/color]"
+            "focus": "[color:#D48806]作业信息：由 MaaYuan Share v25.11.12 生成，需 MaaYuan v0.9.13-beta4 以上运行。如作业中包含[X号位SP技能]、[重开-X号位阵亡检测]等则需 v0.9.13 beta-9 或更高版本。[/color]"
         }
 
         result_config["抄作业胜利后继续"] = {
@@ -610,9 +626,7 @@ def reverse_config(config_data):
             round_num = key.replace("检测回合", "")
             temp_data.setdefault(round_num, {'prefix': [], 'actions': []})
 
-            # 部分导入文件会在 next 字段开头加入 "史子眇sp"，
-            # 这里需要过滤掉该占位符再进行后续判断
-            next_list = [n for n in value.get("next", []) if n != "史子眇sp"]
+            next_list = value.get("next", [])
             if not next_list:
                 continue
 
@@ -643,10 +657,11 @@ def reverse_config(config_data):
                 action_code = f"额外:{action_code[2:]}"  # 去掉"再动"前缀
             elif '阵亡检测' in action_code:
                 action_code = f"重开:检测{action_code[0]}号位阵亡"
-            elif action_code in ['左侧目标', '右侧目标', '吕布', '开自动']:
+            elif action_code in ['左侧目标', '右侧目标', '开自动']:
                 action_code = f"额外:{action_code}"
-            elif action_code == '额外:史子眇sp':
-                action_code = "额外:史子眇sp"
+            elif action_code in ['1号位SP', '2号位SP', '3号位SP', '4号位SP', '5号位SP']:
+                sp_position = action_code[0]  # 提取数字
+                action_code = f"额外:{sp_position}SP"
             elif action_code == '等待':
                 action_code = f"额外:等待:{value.get('post_delay')}"
 
