@@ -169,3 +169,7 @@ cython_debug/
 .python-version
 backend/output/*
 backend/data/*
+
+.claude
+CLAUDE.md
+operations-log.md

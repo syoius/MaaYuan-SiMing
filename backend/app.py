@@ -1,404 +1,266 @@
+"""
+Flask API 路由层
+负责 HTTP 请求处理和响应格式化
+所有业务逻辑委托给 Service 层
+"""
+import os
+import uuid
+
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
-import json
-import os
-import sys
-import subprocess
-import uuid
-import tempfile
-from contextlib import contextmanager
 
+from backend.config import Constants, get_output_dir, get_frontend_dir
+from backend.models.schemas import (
+    RoundActionsRequest, GenerateLoopRequest,
+    ExportRequest, RestartRequest, OpenFolderRequest,
+    SuccessResponse, ErrorResponse, ImportResponse
+)
+from backend.services.action_service import (
+    ActionService, ActionServiceError, RoundLimitError
+)
+
+# 创建 Flask 应用
 app = Flask(__name__)
 CORS(app)
 
-def get_data_dir():
-    """获取数据目录"""
-    if getattr(sys, 'frozen', False):
-        # 如果是打包后的环境，使用可执行文件所在目录
-        base_dir = os.path.dirname(sys.executable)
-    else:
-        # 开发环境使用当前文件所在目录
-        base_dir = os.path.dirname(os.path.abspath(__file__))
+# 初始化服务
+action_service = ActionService()
 
-    return os.path.join(base_dir, 'data')
 
-# 配置文件路径
-DATA_DIR = get_data_dir()
-CONFIG_FILE = os.path.join(DATA_DIR, 'round_actions.json')
+# ==================== 错误处理 ====================
 
-def load_actions():
-    """加载动作配置"""
-    try:
-        # 确保数据目录存在
-        os.makedirs(DATA_DIR, exist_ok=True)
+def handle_error(message: str, status_code: int = 400) -> tuple:
+    """统一错误响应格式"""
+    return jsonify(ErrorResponse(error=message).model_dump()), status_code
 
-        if os.path.exists(CONFIG_FILE):
-            with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        return {}
-    except Exception as e:
-        print(f"加载配置失败: {str(e)}")
-        return {}
 
-def save_actions(actions):
-    """保存动作配置"""
-    try:
-        # 确保数据目录存在
-        os.makedirs(DATA_DIR, exist_ok=True)
+def handle_success(message: str = None) -> dict:
+    """统一成功响应格式"""
+    return jsonify(SuccessResponse(message=message).model_dump())
 
-        with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
-            json.dump(actions, f, ensure_ascii=False, indent=4)
-    except Exception as e:
-        print(f"保存配置失败: {str(e)}")
-        raise
+
+# ==================== 静态文件服务 ====================
+
+@app.route('/')
+def serve_index():
+    """首页"""
+    return send_from_directory(get_frontend_dir(), 'index.html')
+
+
+@app.route('/assets/<path:filename>')
+def serve_assets(filename):
+    """前端资源"""
+    return send_from_directory(os.path.join(get_frontend_dir(), 'assets'), filename)
+
+
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    """静态文件"""
+    return send_from_directory(os.path.join(get_frontend_dir(), 'static'), filename)
+
+
+# ==================== 动作管理 API ====================
 
 @app.route('/api/actions', methods=['GET'])
 def get_actions():
     """获取所有回合动作"""
-    return jsonify(load_actions())
+    actions = action_service.get_all_actions()
+    return jsonify(actions)
+
 
 @app.route('/api/actions/<round_num>', methods=['GET', 'PUT', 'DELETE'])
 def handle_round_actions(round_num):
-    """处理单个回合的动作"""
-    if int(round_num) > 50:
-        return jsonify({'error': '超过50回合限制'}), 400
+    """处理单个回合的动作（获取/保存/清空）"""
+    try:
+        round_num = int(round_num)
+        if round_num > Constants.MAX_ROUNDS:
+            return handle_error(f'超过{Constants.MAX_ROUNDS}回合限制', 400)
 
-    actions = load_actions()
-    print(f"当前操作: {request.method}, 回合: {round_num}")
+        if request.method == 'GET':
+            actions = action_service.get_round_actions(round_num)
+            return jsonify(actions)
 
-    if request.method == 'GET':
-        return jsonify(actions.get(round_num, []))
+        elif request.method == 'PUT':
+            try:
+                data = RoundActionsRequest(actions=request.json)
+                action_service.save_round_actions(round_num, data.actions)
+                return handle_success()
+            except Exception as e:
+                print(f"保存回合 {round_num} 失败: {str(e)}")
+                return handle_error(str(e), 400)
 
-    elif request.method == 'PUT':
-        try:
-            print(f"收到的数据: {request.json}")
-            round_actions = request.json
-            if not isinstance(round_actions, list):
-                print(f"无效的动作数据类型: {type(round_actions)}")
-                return jsonify({'error': '无效的动作数据'}), 400
-            actions[round_num] = round_actions
-            save_actions(actions)
-            print(f"保存回合 {round_num} 成功")
-            return jsonify({'status': 'success'})
-        except Exception as e:
-            print(f"保存回合 {round_num} 失败: {str(e)}")
-            return jsonify({'error': str(e)}), 500
+        elif request.method == 'DELETE':
+            action_service.clear_round(round_num)
+            return handle_success()
 
-    elif request.method == 'DELETE':
-        try:
-            if round_num in actions:
-                actions[round_num] = []
-                save_actions(actions)
-                print(f"清空回合 {round_num} 的动作成功")
-            return jsonify({'status': 'success'})
-        except Exception as e:
-            print(f"清空回合 {round_num} 的动作失败: {str(e)}")
-            return jsonify({'error': str(e)}), 500
+    except ValueError:
+        return handle_error('无效的回合编号', 400)
+    except Exception as e:
+        print(f"处理回合 {round_num} 失败: {str(e)}")
+        return handle_error(str(e), 500)
 
-@app.route('/api/actions/generate-loop', methods=['POST'])
-def generate_loop():
-    """生成循环回合"""
-    data = request.json
-    start_round = str(data['start'])  # 循环模板的起始回合
-    end_round = str(data['end'])      # 循环模板的结束回合
 
-    actions = load_actions()
-
-    # 验证起始回合和结束回合都存在
-    if start_round not in actions or end_round not in actions:
-        return jsonify({'error': '起始回合或结束回合未设置'}), 400
-
-    # 确保起始回合小于等于结束回合
-    if int(start_round) > int(end_round):
-        return jsonify({'error': '起始回合不能大于结束回合'}), 400
-
-    # 获取模板长度（包含起始和结束回合）
-    template_length = int(end_round) - int(start_round) + 1
-
-    # 找到当前最大回合数
-    max_round = max(map(int, actions.keys())) if actions else 0
-    next_start = max_round + 1
-
-    # 检查是否超过50回合限制
-    if next_start + template_length - 1 > 50:
-        return jsonify({'error': '超过50回合限制'}), 400
-
-    # 复制模板一次
-    for offset in range(template_length):
-        src_round = str(int(start_round) + offset)  # 模板中的回合
-        target_round = str(next_start + offset)     # 要生成的回合
-
-        # 如果模板回合有动作，复制到目标回合
-        if src_round in actions:
-            actions[target_round] = actions[src_round].copy()
-
-    save_actions(actions)
-    return jsonify({'status': 'success'})
-
-# 添加一个新的路由来处理新增回合（虽然可以用 PUT 处理，但为了清晰可以单独处理）
 @app.route('/api/actions/add/<round_num>', methods=['POST'])
 def add_round(round_num):
     """新增回合"""
-    print(f"收到新增回合请求: round_num = {round_num}")  # 添加日志
     try:
-        if int(round_num) > 50:
-            print(f"回合数超过限制: {round_num}")  # 添加日志
-            return jsonify({'error': '超过50回合限制'}), 400
+        round_num = int(round_num)
+        if round_num > Constants.MAX_ROUNDS:
+            return handle_error(f'超过{Constants.MAX_ROUNDS}回合限制', 400)
 
-        actions = load_actions()
-        print(f"当前动作配置: {actions}")  # 添加日志
-        if round_num not in actions:
-            actions[round_num] = []  # 新回合默认为空列表
-            save_actions(actions)
-            print(f"新增回合 {round_num} 成功")
-        return jsonify({'status': 'success'})
+        action_service.add_round(round_num)
+        return handle_success()
+
+    except RoundLimitError as e:
+        return handle_error(str(e), 400)
     except Exception as e:
-        print(f"新增回合 {round_num} 失败: {str(e)}")  # 添加错误日志
-        return jsonify({'error': str(e)}), 500
+        print(f"新增回合 {round_num} 失败: {str(e)}")
+        return handle_error(str(e), 500)
+
 
 @app.route('/api/rounds/<round_num>', methods=['DELETE'])
 def delete_round(round_num):
     """删除整个回合"""
     try:
-        actions = load_actions()
-        if round_num in actions:
-            del actions[round_num]
-            save_actions(actions)
-            print(f"删除回合 {round_num} 成功")  # 添加日志
-            return jsonify({'status': 'success'})
-        return jsonify({'status': 'not_found'}), 404
-    except Exception as e:
-        print(f"删除回合 {round_num} 失败: {str(e)}")  # 添加错误日志
-        return jsonify({'error': str(e)}), 500
+        round_num = int(round_num)
+        deleted = action_service.delete_round(round_num)
 
-# 添加一个临时文件管理器
-@contextmanager
-def temp_json_file():
-    """创建临时JSON文件的上下文管理器"""
-    temp_file = tempfile.NamedTemporaryFile(
-        mode='w+',
-        suffix='.json',
-        encoding='utf-8',
-        delete=False
-    )
+        if deleted:
+            return handle_success()
+        return handle_error('回合不存在', 404)
+
+    except Exception as e:
+        print(f"删除回合 {round_num} 失败: {str(e)}")
+        return handle_error(str(e), 500)
+
+
+@app.route('/api/actions/clear', methods=['POST'])
+def clear_actions():
+    """清空所有配置"""
     try:
-        yield temp_file
-    finally:
-        try:
-            temp_file.close()
-            os.unlink(temp_file.name)
-        except Exception as e:
-            print(f"清理临时文件失败: {str(e)}")
+        action_service.clear_all()
+        return handle_success()
+    except Exception as e:
+        print(f"清空配置失败: {str(e)}")
+        return handle_error(str(e), 500)
+
+
+# ==================== 高级功能 API ====================
+
+@app.route('/api/actions/generate-loop', methods=['POST'])
+def generate_loop():
+    """生成循环回合"""
+    try:
+        data = GenerateLoopRequest(**request.json)
+        action_service.generate_loop(data)
+        return handle_success()
+
+    except RoundLimitError as e:
+        return handle_error(str(e), 400)
+    except ActionServiceError as e:
+        return handle_error(str(e), 400)
+    except Exception as e:
+        print(f"生成循环失败: {str(e)}")
+        return handle_error(str(e), 500)
+
+
+@app.route('/api/actions/restart', methods=['POST'])
+def add_restart():
+    """添加重开动作"""
+    try:
+        data = RestartRequest(**request.json)
+        action_service.add_restart(data)
+        return handle_success()
+
+    except ActionServiceError as e:
+        return handle_error(str(e), 400)
+    except Exception as e:
+        print(f"添加重开失败: {str(e)}")
+        return handle_error(str(e), 500)
+
 
 @app.route('/api/export', methods=['POST'])
 def export_config():
     """导出生成的配置文件"""
     try:
-        data = request.json
-        level_name = data.get('level_name', 'generated_config')
-        level_type = data.get('level_type', '')
-        level_recognition_name = data.get('level_recognition_name', '')
-        difficulty = data.get('difficulty', '')
-        cave_type = data.get('cave_type', '')
-        lantai_nav = data.get('lantai_nav', '')
-        attack_delay = data.get('attack_delay', '')
-        ult_delay = data.get('ult_delay', '')
-        defense_delay = data.get('defense_delay', '')
-        actions = data.get('actions', {})  # 从请求中获取动作数据
+        data = ExportRequest(**request.json)
+        result = action_service.export_config(data)
 
-        # 生成唯一的输出文件名
+        # 添加唯一ID到文件名
         unique_id = uuid.uuid4().hex[:8]
-        output_filename = f'{level_name}_{unique_id}.json'
+        output_filename = f"{data.level_name}_{unique_id}.json"
 
-        if getattr(sys, 'frozen', False):
-            # 打包环境
-            from backend import fight_g
-            output_dir = os.path.join(os.path.dirname(sys.executable), 'output')
-        else:
-            # 开发环境
-            script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fight_g.py')
-            output_dir = os.path.join(os.path.dirname(script_path), 'output')
-
-        os.makedirs(output_dir, exist_ok=True)
+        # 保存到输出目录
+        output_dir = get_output_dir()
         config_path = os.path.join(output_dir, output_filename)
 
-        # 使用临时文件上下文管理器
-        with temp_json_file() as temp_input, temp_json_file() as temp_output:
-            # 将动作数据写入临时输入文件
-            json.dump(actions, temp_input, ensure_ascii=False, indent=4)
-            temp_input.flush()  # 确保数据写入磁盘
+        import json
+        with open(config_path, 'w', encoding='utf-8') as f:
+            json.dump(result['content'], f, ensure_ascii=False, indent=4)
 
-            if getattr(sys, 'frozen', False):
-                # 打包环境的处理逻辑
-                fight_g.generate_config(
-                    temp_input.name,
-                    temp_output.name,
-                    level_type,
-                    level_recognition_name,
-                    difficulty,
-                    cave_type,
-                    lantai_nav,
-                    attack_delay,
-                    ult_delay,
-                    defense_delay,
-                )
-            else:
-                # 开发环境下运行脚本
-                python_executable = sys.executable
-                result = subprocess.run(
-                    [python_executable, script_path, temp_input.name, temp_output.name,
-                     level_type, level_recognition_name, difficulty, cave_type, lantai_nav, attack_delay, ult_delay, defense_delay],
-                    capture_output=True,
-                    text=True,
-                    cwd=os.path.dirname(script_path)
-                )
-
-                if result.returncode != 0:
-                    print(f"脚本执行失败: {result.stderr}")
-                    return jsonify({'error': f'生成配置失败: {result.stderr}'}), 500
-
-            # 读取生成的配置文件内容
-            temp_output.seek(0)
-            config_content = temp_output.read()
-
-            if not config_content:
-                return jsonify({'error': '配置文件生成失败'}), 500
-
-            # 返回文件内容和原始文件名（不包含唯一ID）
-            return jsonify({
-                'content': config_content,
-                'filename': f'{level_name}.json'  # 返回原始文件名给用户
-            })
+        # 返回文件内容和原始文件名
+        return jsonify({
+            'content': json.dumps(result['content'], ensure_ascii=False, indent=4),
+            'filename': result['filename']
+        })
 
     except Exception as e:
         print(f"导出失败: {str(e)}")
-        return jsonify({'error': f'导出失败: {str(e)}'}), 500
+        return handle_error(f'导出失败: {str(e)}', 500)
 
-@app.route('/api/open-folder', methods=['POST'])
-def open_folder():
-    try:
-        path = request.json.get('path')
-        folder_path = os.path.dirname(path)
-        if os.path.exists(folder_path):
-            os.startfile(folder_path)  # Windows
-            return jsonify({'message': '已打开文件夹'})
-        return jsonify({'error': '文件夹不存在'}), 404
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/actions/clear', methods=['POST'])
-def clear_actions():
-    """清所有配置"""
-    try:
-        save_actions({})  # 保存空字典来清空配置
-        return jsonify({'status': 'success'})
-    except Exception as e:
-        print(f"清空配置失败: {str(e)}")
-        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/actions/import', methods=['POST'])
 def import_actions():
     """导入配置文件"""
     try:
         if 'file' not in request.files:
-            return jsonify({'error': '没有上传文件'}), 400
+            return handle_error('没有上传文件', 400)
 
         file = request.files['file']
         if file.filename == '':
-            return jsonify({'error': '没有选择文件'}), 400
+            return handle_error('没有选择文件', 400)
 
-        # 创建必要的目录
-        data_dir = get_data_dir()
-        os.makedirs(data_dir, exist_ok=True)
-        temp_dir = os.path.join(data_dir, 'temp')
-        os.makedirs(temp_dir, exist_ok=True)
+        import json
+        config_data = json.load(file.stream)
 
-        temp_path = os.path.join(temp_dir, 'temp_import.json')
+        result = action_service.import_config(config_data)
 
-        # 保存上传的文件
-        file.save(temp_path)
+        return jsonify(ImportResponse(
+            actions=result['actions'],
+            config_info=result['config_info']
+        ).model_dump())
 
-        # 读取配置文件
-        with open(temp_path, 'r', encoding='utf-8') as f:
-            config_data = json.load(f)
-
-        # 导入配置
-        if getattr(sys, 'frozen', False):
-            # 打包环境
-            from backend import fight_g
-        else:
-            # 开发环境
-            import fight_g
-
-        result = fight_g.reverse_config(config_data)
-        round_actions = result['actions']
-        config_info = result['config_info']
-
-        # 添加调试输出
-        print("Config data:", config_data)
-        print("Reverse config result:", result)
-        print("Config info:", config_info)
-
-        # 保存导入的配置
-        save_actions(round_actions)
-
-        # 清理临时文件
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
-
-        return jsonify({
-            'message': '导入成功',
-            'actions': round_actions,
-            'config_info': config_info
-        })
+    except json.JSONDecodeError:
+        return handle_error('无效的 JSON 文件', 400)
     except Exception as e:
         print(f"导入失败: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        return handle_error(str(e), 500)
 
-@app.route('/api/actions/restart', methods=['POST'])
-def add_restart():
-    """添加重开动作"""
+
+@app.route('/api/open-folder', methods=['POST'])
+def open_folder():
+    """打开文件夹"""
     try:
-        data = request.json
-        round_num = str(data['roundNum'])  # 确保round_num是字符串
-        restart_type = data['restartType']
-        is_extended = data.get('isExtended', False)
+        data = OpenFolderRequest(**request.json)
+        folder_path = os.path.dirname(data.path)
 
-        if not restart_type:
-            return jsonify({'error': '请选择重开类型'}), 400
+        if os.path.exists(folder_path):
+            # Windows
+            if os.name == 'nt':
+                os.startfile(folder_path)
+            # macOS
+            elif os.name == 'posix':
+                import subprocess
+                subprocess.call(['open', folder_path])
+            return jsonify({'message': '已打开文件夹'})
 
-        # 加载当前配置
-        actions = load_actions()
-        
-        if round_num not in actions:
-            return jsonify({'error': '回合不存在'}), 404
+        return handle_error('文件夹不存在', 404)
 
-        current_actions = actions[round_num]
-        if not current_actions:
-            return jsonify({'error': '请先添加动作再设置重开'}), 400
-
-        # 创建重开动作
-        restart_text = "全灭" if restart_type == "全灭重开" else "左上角"
-        restart_action = [f"重开:{restart_text}"]
-        
-        # 获取firstLineActions
-        first_line_actions = current_actions.get('firstLineActions', len(current_actions))
-        
-        # 根据是否为扩展行，选择添加位置
-        if is_extended:
-            current_actions.append(restart_action)
-        else:
-            current_actions.insert(first_line_actions, restart_action)
-            current_actions['firstLineActions'] = first_line_actions + 1
-
-        # 保存更新后的动作
-        actions[round_num] = current_actions
-        save_actions(actions)
-
-        return jsonify({'status': 'success'})
     except Exception as e:
-        print(f"添加重开失败: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        return handle_error(str(e), 500)
+
+
+# ==================== 启动入口 ====================
 
 if __name__ == '__main__':
-    app.run(port=49481)
+    app.run(port=Constants.DEFAULT_PORT)
