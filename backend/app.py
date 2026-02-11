@@ -265,4 +265,4 @@ def open_folder():
 # ==================== 启动入口 ====================
 
 if __name__ == '__main__':
-    app.run(port=Constants.DEFAULT_PORT)
+    app.run(host='0.0.0.0', port=Constants.DEFAULT_PORT)
