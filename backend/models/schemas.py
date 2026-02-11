@@ -55,7 +55,7 @@ class GenerateLoopRequest(BaseModel):
 class ExportRequest(BaseModel):
     """导出配置请求"""
     level_name: str = Field(default='generated_config', description="关卡名称")
-    level_type: Literal['', '主线', '洞窟', '活动有分级', '白鹄', '兰台'] = Field(default='', description="关卡类型")
+    level_type: Literal['', '主线', '洞窟', '活动有分级', '白鹄', '兰台', '其他'] = Field(default='', description="关卡类型")
     level_recognition_name: str = Field(default='', description="关卡识别名称")
     difficulty: str = Field(default='', description="难度等级")
     cave_type: Literal['', '左', '右'] = Field(default='', description="洞窟类型")
