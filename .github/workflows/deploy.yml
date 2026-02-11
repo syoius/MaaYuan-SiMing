@@ -31,6 +31,6 @@ jobs:
             pip install -r requirements.txt
 
             echo "🚀 Restarting service..."
-            sudo systemctl restart maayuan-siming.service
+            sudo systemctl restart myshare-simingapi.service
 
             echo "✅ Deployment completed successfully!"
