@@ -406,7 +406,7 @@ class ConfigGenerator:
             "action": "Click",
             "pre_delay": 500,
             "post_delay": 2000,
-            "next": ["抄作业确定左上角重开", "抄作业退出兰台木桩", next_node],
+            "next": ["[JumpBack]抄作业确定左上角重开", "抄作业退出兰台木桩", next_node],
             "focus": "正在尝试点左上角重开",
             "timeout": 20000
         }
