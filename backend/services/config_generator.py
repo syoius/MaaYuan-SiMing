@@ -390,6 +390,7 @@ class ConfigGenerator:
         nav_map = {
             '主线': "抄作业找到关卡-主线",
             '洞窟': "抄作业进入关卡-洞窟",
+            '活动': "抄作业找到关卡-活动",
             '活动有分级': "抄作业找到关卡-活动分级",
             '白鹄': "抄作业进入关卡-白鹄",
             '兰台': "抄作业找到关卡-兰台",
@@ -437,6 +438,8 @@ class ConfigGenerator:
         elif level_config.level_type == '兰台':
             print("[DEBUG] 进入兰台分支")
             self._add_lantai_nodes(config, level_config, next_node)
+        elif level_config.level_type == '活动':
+            self._add_simple_event_nodes(config, level_config, next_node)
         elif level_config.level_type == '活动有分级':
             self._add_event_nodes(config, level_config, next_node)
         elif level_config.level_type not in ('主线', '白鹄'):
@@ -514,6 +517,18 @@ class ConfigGenerator:
             "next": ["抄作业准备开始战斗"]
         }
 
+    def _add_simple_event_nodes(self, config: dict, level_config: LevelConfig, next_node: str) -> None:
+        """添加活动导航节点（无难度分级）"""
+        config["抄作业找到关卡-活动"] = {
+            "recognition": "OCR",
+            "expected": level_config.level_recognition_name,
+            "roi": [0, 249, 720, 1030],
+            "action": "Click",
+            "pre_delay": 1500,
+            "next": ["抄作业进入关卡"],
+            "timeout": 20000
+        }
+
     def _add_event_nodes(self, config: dict, level_config: LevelConfig, next_node: str) -> None:
         """添加活动导航节点"""
         config["抄作业找到关卡-活动分级"] = {
@@ -576,6 +591,7 @@ class ConfigGenerator:
             type_map = {
                 "抄作业找到关卡-主线": ("主线", None),
                 "抄作业进入关卡-洞窟": ("洞窟", "cave_type"),
+                "抄作业找到关卡-活动": ("活动", "simple_event"),
                 "抄作业找到关卡-活动分级": ("活动有分级", "event"),
                 "抄作业进入关卡-白鹄": ("白鹄", None),
                 "抄作业找到关卡-兰台": ("兰台", "lantai"),
@@ -588,6 +604,8 @@ class ConfigGenerator:
 
                 if extract_type == "cave_type":
                     config_info.cave_type = config_data.get("抄作业进入关卡-洞窟", {}).get("text_doc", "")
+                elif extract_type == "simple_event":
+                    config_info.level_recognition_name = config_data.get("抄作业找到关卡-活动", {}).get("expected", "")
                 elif extract_type == "event":
                     config_info.level_recognition_name = config_data.get("抄作业找到关卡-活动分级", {}).get("expected", "")
                     config_info.difficulty = config_data.get("抄作业选择活动分级", {}).get("expected", "")
