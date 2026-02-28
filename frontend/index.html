@@ -817,6 +817,7 @@
                       <el-option label="主线" value="主线"></el-option>
                       <el-option label="洞窟" value="洞窟"></el-option>
                       <el-option label="白鹄行动" value="白鹄"></el-option>
+                      <el-option label="活动" value="活动"></el-option>
                       <el-option
                         label="活动-有难度分级"
                         value="活动有分级"
@@ -1733,11 +1734,13 @@
                 localStorage.removeItem("levelRecognitionName");
                 localStorage.removeItem("levelName");
                 localStorage.removeItem("caveType");
+                localStorage.removeItem("difficulty");
 
                 levelType.value = "";
                 levelRecognitionName.value = "";
                 levelName.value = "";
                 caveType.value = "";
+                difficulty.value = "";
 
                 ElementPlus.ElMessage.success("动作已清空");
               } catch (error) {
@@ -1776,7 +1779,8 @@
                   return;
                 }
                 if (
-                  (levelType.value === "活动有分级" ||
+                  (levelType.value === "活动" ||
+                    levelType.value === "活动有分级" ||
                     levelType.value === "其他") &&
                   !levelRecognitionName.value.trim()
                 ) {
