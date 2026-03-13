@@ -487,10 +487,7 @@ class ConfigGenerator:
                 "post_delay": 500,
                 "next": [
                     "抄作业准备开始战斗",
-                    {
-                        "name": "抄作业-兰台确认进入关卡",
-                        "jump_back": True
-                    }
+                    "[JumpBack]抄作业-兰台确认进入关卡",
                 ],
                 "timeout": 4000
             }
