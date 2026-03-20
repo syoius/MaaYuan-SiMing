@@ -414,7 +414,7 @@ class ConfigGenerator:
 
         # 作业信息
         config["作业信息"] = {
-            "focus": "[color:#D48806]作业信息：由 MaaYuan Share v26.02.09 生成，需 MaaYuan v2.0.0-beta5 以上运行。"
+            "focus": "[color:#D48806] [如果版本符合请无视] 该作业由 MaaYuan Share v26.02.09 生成，推荐使用 MaaYuan v2.0.0-beta5 或更高版本运行，以免作业无法使用。"
         }
 
         config["抄作业胜利后继续"] = {
@@ -487,10 +487,7 @@ class ConfigGenerator:
                 "post_delay": 500,
                 "next": [
                     "抄作业准备开始战斗",
-                    {
-                        "name": "抄作业-兰台确认进入关卡",
-                        "jump_back": True
-                    }
+                    "[JumpBack]抄作业-兰台确认进入关卡",
                 ],
                 "timeout": 4000
             }
