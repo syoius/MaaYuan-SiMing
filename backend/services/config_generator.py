@@ -191,6 +191,17 @@ class ConfigGenerator:
                 "action": "Click",
                 "pre_delay": 500,
                 "post_delay": 5000
+            },
+            "关卡内互动": {
+                "text_doc": "关卡内互动",
+                "pre_delay": 500,
+                "action": {
+                    "type": "Click",
+                    "param": {
+                        "target": [662, 398, 18, 22]
+                    }
+                },
+                "post_delay": 1500
             }
         }
 
@@ -649,7 +660,7 @@ class ConfigGenerator:
                     action_code = f"额外:{action_code[2:]}"
                 elif '阵亡检测' in action_code:
                     action_code = f"重开:检测{action_code[0]}号位阵亡"
-                elif action_code in ['左侧目标', '右侧目标', '吕布', '开自动']:
+                elif action_code in ['左侧目标', '右侧目标', '吕布', '开自动', '关卡内互动']:
                     action_code = f"额外:{action_code}"
                 elif action_code == '额外:史子眇sp':
                     action_code = "额外:史子眇sp"
