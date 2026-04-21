@@ -245,13 +245,16 @@ class ConfigGenerator:
         result_config = {}
         current_action_key = None
 
-        # 先扫描橙星检测回合
+        # 先扫描橙星/紫星检测回合
         orangestar_rounds = set()
+        purplestar_rounds = set()
         for round_num, actions in round_actions.items():
             for group in actions:
                 if isinstance(group, list) and len(group) > 0:
                     if group[0].startswith('重开:无橙星'):
                         orangestar_rounds.add(str(round_num))
+                    elif group[0].startswith('重开:无紫星'):
+                        purplestar_rounds.add(str(round_num))
 
         # 生成回合节点
         for round_num, actions in round_actions.items():
@@ -265,6 +268,8 @@ class ConfigGenerator:
             first_action = actions[0][0] if actions and actions[0] else None
             if round_num_str in orangestar_rounds:
                 next_list = [f"第{round_num}回合橙星检测"]
+            elif round_num_str in purplestar_rounds:
+                next_list = [f"第{round_num}回合紫星检测"]
             elif first_action and ('检测' in first_action):
                 next_list = [f"回合{round_num}行动1"]
             elif first_action and first_action.startswith('重开:'):
@@ -287,7 +292,7 @@ class ConfigGenerator:
                 "next": next_list,
                 "on_error": ["抄作业点左上角重开"],
                 "timeout": 3000,
-                "post_delay": 2000,
+                "post_delay": 4000,
             }
 
             # 橙星检测节点
@@ -300,6 +305,17 @@ class ConfigGenerator:
                     "next": [f"回合{round_num}行动1"],
                     "text_doc": f"第{round_num}回合橙星检测",
                     "focus": f"第{round_num}回合有橙星"
+                }
+            # 紫星检测节点
+            elif round_num_str in purplestar_rounds:
+                result_config[f"第{round_num}回合紫星检测"] = {
+                    "recognition": "ColorMatch",
+                    "upper": [198, 115, 227],
+                    "lower": [112, 54, 133],
+                    "roi": [58, 160, 103, 88],
+                    "next": [f"回合{round_num}行动1"],
+                    "text_doc": f"第{round_num}回合紫星检测",
+                    "focus": f"第{round_num}回合有紫星"
                 }
 
             action_counter = 1
@@ -637,6 +653,8 @@ class ConfigGenerator:
                 first_next = next_list[0]
                 if first_next == f"第{round_num}回合橙星检测":
                     temp_data[round_num]['prefix'].append(["重开:无橙星"])
+                elif first_next == f"第{round_num}回合紫星检测":
+                    temp_data[round_num]['prefix'].append(["重开:无紫星"])
                 elif first_next == "抄作业点左上角重开":
                     temp_data[round_num]['prefix'].append(["重开:左上角"])
                 elif first_next == "抄作业全灭重开":
@@ -688,7 +706,7 @@ class ConfigGenerator:
 
             final_list = []
             if actions:
-                if prefix and prefix[0] == ["重开:无橙星"]:
+                if prefix and prefix[0] in (["重开:无橙星"], ["重开:无紫星"]):
                     final_list.extend(prefix)
 
                 sorted_actions = [action for _, action in sorted(actions, key=lambda x: x[0])]
