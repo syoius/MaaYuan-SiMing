@@ -41,9 +41,33 @@ def get_action_focus(action_code):
     }
     return f"{pos_map.get(pos, pos)}{act_map.get(act, act)}"
 
-def get_downposition(text):
-    match = re.search(r'(\d+)号位阵亡', text)
-    return int(match.group(1)) if match else None
+def parse_detection(text):
+    """
+    解析检测类动作文本，返回 {custom_action, position, text_doc} 或 None
+
+    支持格式：
+        - 重开:检测X号位阵亡 → DownRestart
+        - 重开:检测X号位退场 → RetreatRestart
+        - 重开:检测X号位鹦鹉 → BirdRestart
+        - 重开:检测X号位龙气 → DragonRestart
+    """
+    match = re.search(r'检测(\d+)号位(阵亡|退场|鹦鹉|龙气)', text)
+    if not match:
+        return None
+    position = int(match.group(1))
+    condition = match.group(2)
+    type_map = {
+        "阵亡": ("DownRestart", f"{position}号位阵亡检测"),
+        "退场": ("RetreatRestart", f"{position}号位退场检测"),
+        "鹦鹉": ("BirdRestart", f"{position}号位鹦鹉检测"),
+        "龙气": ("DragonRestart", f"{position}号位龙气检测"),
+    }
+    custom_action, text_doc = type_map[condition]
+    return {
+        "custom_action": custom_action,
+        "position": position,
+        "text_doc": text_doc,
+    }
 
 def apply_custom_delays(action_templates, attack_delay, ult_delay, defense_delay):
     def update_delay(keyword, delay_value):
@@ -218,20 +242,23 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
                     continue
                 action = action_group[0]
 
-                # 拦截阵亡检测类型的重开
+                # 拦截检测类重开（阵亡/退场/鹦鹉/龙气）
                 if '重开:检测' in action:
                     # 视为正常动作
                     action_key = f"回合{round_num}行动{actual_action_counter}"
                     action_keys.append(action_key)
 
-                    downpos = get_downposition(action)
+                    det = parse_detection(action)
+                    if det is None:
+                        raise ValueError(f"无法解析检测动作: {action}")
+
                     result_config[action_key] = {
-                        "text_doc": str(downpos) + "号位阵亡检测",
+                        "text_doc": det["text_doc"],
                         "action": "Custom",
-                        "custom_action": "DownRestart",
+                        "custom_action": det["custom_action"],
                         "custom_action_param": {
                             "node": action_key,
-                            "position": downpos
+                            "position": det["position"]
                         }
                     }
                     # 提前处理next关系
@@ -657,6 +684,12 @@ def reverse_config(config_data):
                 action_code = f"额外:{action_code[2:]}"  # 去掉"再动"前缀
             elif '阵亡检测' in action_code:
                 action_code = f"重开:检测{action_code[0]}号位阵亡"
+            elif '退场检测' in action_code:
+                action_code = f"重开:检测{action_code[0]}号位退场"
+            elif '鹦鹉检测' in action_code:
+                action_code = f"重开:检测{action_code[0]}号位鹦鹉"
+            elif '龙气检测' in action_code:
+                action_code = f"重开:检测{action_code[0]}号位龙气"
             elif action_code in ['左侧目标', '右侧目标', '开自动']:
                 action_code = f"额外:{action_code}"
             elif action_code in ['1号位SP', '2号位SP', '3号位SP', '4号位SP', '5号位SP']:
