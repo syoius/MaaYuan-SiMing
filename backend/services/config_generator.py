@@ -450,6 +450,15 @@ class ConfigGenerator:
         # 路由去重
         self._deduplicate_routes(result_config)
 
+        # 为检测节点回填 restore_next：不触发重开时恢复的正常流程
+        DETECTION_ACTIONS = ("DownRestart", "RetreatRestart", "BirdRestart", "DragonRestart")
+        for node in result_config.values():
+            if isinstance(node, dict) and node.get("custom_action") in DETECTION_ACTIONS:
+                param = node.get("custom_action_param", {})
+                if isinstance(param, dict):
+                    param["restore_next"] = list(node.get("next", []))
+                    node["custom_action_param"] = param
+
         return result_config
 
     def _add_navigation_nodes(self, config: dict, level_config: LevelConfig) -> None:
