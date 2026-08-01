@@ -83,10 +83,33 @@ class ConfigGenerator:
         act_map = {'普': '普攻', '大': '大招', '下': '防御', 'sp': 'SP'}
         return f"{pos_map.get(pos, pos)}{act_map.get(act, act)}"
 
-    def _get_downposition(self, text: str) -> Optional[int]:
-        """从阵亡检测文本中提取位置"""
-        match = re.search(r'(\d+)号位阵亡', text)
-        return int(match.group(1)) if match else None
+    def _parse_detection(self, text: str) -> Optional[dict]:
+        """
+        解析检测类动作文本，返回 {custom_action, position, text_doc} 或 None
+
+        支持格式：
+            - 重开:检测X号位阵亡 → DownRestart
+            - 重开:检测X号位退场 → RetreatRestart
+            - 重开:检测X号位鹦鹉 → BirdRestart
+            - 重开:检测X号位龙气 → DragonRestart
+        """
+        match = re.search(r'检测(\d+)号位(阵亡|退场|鹦鹉|龙气)', text)
+        if not match:
+            return None
+        position = int(match.group(1))
+        condition = match.group(2)
+        type_map = {
+            "阵亡": ("DownRestart", f"{position}号位阵亡检测"),
+            "退场": ("RetreatRestart", f"{position}号位退场检测"),
+            "鹦鹉": ("BirdRestart", f"{position}号位鹦鹉检测"),
+            "龙气": ("DragonRestart", f"{position}号位龙气检测"),
+        }
+        custom_action, text_doc = type_map[condition]
+        return {
+            "custom_action": custom_action,
+            "position": position,
+            "text_doc": text_doc,
+        }
 
     def _append_to_next(self, node: dict, value: str) -> None:
         """向节点的 next 字段追加值"""
@@ -344,16 +367,18 @@ class ConfigGenerator:
 
                 action = action_group[0]
 
-                # 处理阵亡检测重开
+                # 处理检测类重开（阵亡/退场/鹦鹉/龙气）
                 if '重开:检测' in action:
                     action_key = f"回合{round_num}行动{action_counter}"
-                    downpos = self._get_downposition(action)
+                    det = self._parse_detection(action)
+                    if det is None:
+                        raise ValueError(f"无法解析检测动作: {action}")
 
                     result_config[action_key] = {
-                        "text_doc": f"{downpos}号位阵亡检测",
+                        "text_doc": det["text_doc"],
                         "action": "Custom",
-                        "custom_action": "DownRestart",
-                        "custom_action_param": {"node": action_key, "position": downpos}
+                        "custom_action": det["custom_action"],
+                        "custom_action_param": {"node": action_key, "position": det["position"]}
                     }
 
                     if current_action_key:
@@ -696,6 +721,12 @@ class ConfigGenerator:
                     action_code = f"额外:{action_code[2:]}"
                 elif '阵亡检测' in action_code:
                     action_code = f"重开:检测{action_code[0]}号位阵亡"
+                elif '退场检测' in action_code:
+                    action_code = f"重开:检测{action_code[0]}号位退场"
+                elif '鹦鹉检测' in action_code:
+                    action_code = f"重开:检测{action_code[0]}号位鹦鹉"
+                elif '龙气检测' in action_code:
+                    action_code = f"重开:检测{action_code[0]}号位龙气"
                 elif action_code in ['左侧目标', '右侧目标', '吕布', '开自动', '关卡内互动']:
                     action_code = f"额外:{action_code}"
                 elif action_code == '额外:史子眇sp':

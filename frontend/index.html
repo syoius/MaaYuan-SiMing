@@ -439,10 +439,22 @@
                             label="阵亡重开"
                             value="阵亡重开"
                           ></el-option>
+                          <el-option
+                            label="退场重开"
+                            value="退场重开"
+                          ></el-option>
+                          <el-option
+                            label="鹦鹉重开"
+                            value="鹦鹉重开"
+                          ></el-option>
+                          <el-option
+                            label="龙气重开"
+                            value="龙气重开"
+                          ></el-option>
                         </el-select>
                       </el-form-item>
                       <template
-                        v-if="selectedRestart[row.roundNum] === '阵亡重开'"
+                        v-if="['阵亡重开','退场重开','鹦鹉重开','龙气重开'].includes(selectedRestart[row.roundNum])"
                       >
                         <el-form-item style="margin: 0 10px 0 0">
                           <el-select
@@ -710,10 +722,22 @@
                             label="阵亡重开"
                             value="阵亡重开"
                           ></el-option>
+                          <el-option
+                            label="退场重开"
+                            value="退场重开"
+                          ></el-option>
+                          <el-option
+                            label="鹦鹉重开"
+                            value="鹦鹉重开"
+                          ></el-option>
+                          <el-option
+                            label="龙气重开"
+                            value="龙气重开"
+                          ></el-option>
                         </el-select>
                       </el-form-item>
                       <template
-                        v-if="selectedRestartExtended[row.roundNum] === '阵亡重开'"
+                        v-if="['阵亡重开','退场重开','鹦鹉重开','龙气重开'].includes(selectedRestartExtended[row.roundNum])"
                       >
                         <el-form-item style="margin: 0 10px 0 0">
                           <el-select
@@ -2025,12 +2049,18 @@
                   return;
                 }
 
-                // 如果是阵亡重开，检查位置和动作类型是否已选择
-                if (restartType === "阵亡重开") {
+                // 如果是需要位置的检测类重开，检查位置是否已选择
+                if (["阵亡重开","退场重开","鹦鹉重开","龙气重开"].includes(restartType)) {
                   const position = downPosition.value[roundNum];
                   if (!position) {
+                    const typeLabels = {
+                      "阵亡重开": "阵亡",
+                      "退场重开": "退场",
+                      "鹦鹉重开": "鹦鹉",
+                      "龙气重开": "龙气"
+                    };
                     ElementPlus.ElMessage.warning(
-                      "请选择检测密探是否阵亡的具体位置"
+                      `请选择检测密探${typeLabels[restartType]}的具体位置`
                     );
                     return;
                   }
@@ -2055,6 +2085,13 @@
                 );
 
                 // 创建新的重开动作
+                const detectionTypes = ["阵亡重开","退场重开","鹦鹉重开","龙气重开"];
+                const detectionText = {
+                  "阵亡重开": "阵亡",
+                  "退场重开": "退场",
+                  "鹦鹉重开": "鹦鹉",
+                  "龙气重开": "龙气"
+                };
                 const newAction = [
                   `重开:${
                     restartType === "全灭重开"
@@ -2063,8 +2100,8 @@
                       ? "左上角"
                       : restartType === "无橙星重开"
                       ? "无橙星"
-                      : restartType === "阵亡重开"
-                      ? `检测${downPosition.value[roundNum]}号位阵亡`
+                      : detectionTypes.includes(restartType)
+                      ? `检测${downPosition.value[roundNum]}号位${detectionText[restartType]}`
                       : restartType
                   }`,
                 ];
