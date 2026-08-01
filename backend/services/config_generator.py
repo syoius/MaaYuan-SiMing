@@ -589,6 +589,7 @@ class ConfigGenerator:
             "expected": level_config.level_recognition_name,
             "roi": [0, 249, 720, 1030],
             "action": "Click",
+            "target_offset": level_config.rec_target_offset,
             "pre_delay": 1500,
             "next": ["抄作业进入关卡"],
             "timeout": 20000
@@ -601,6 +602,7 @@ class ConfigGenerator:
             "expected": level_config.level_recognition_name,
             "roi": [0, 249, 720, 1030],
             "action": "Click",
+            "target_offset": level_config.rec_target_offset,
             "pre_delay": 1500,
             "next": ["抄作业选择活动分级"],
             "timeout": 20000
@@ -622,10 +624,26 @@ class ConfigGenerator:
             "expected": level_config.level_recognition_name,
             "roi": [0, 297, 720, 1030],
             "action": "Click",
+            "target_offset": level_config.rec_target_offset,
             "pre_delay": 2000,
             "next": ["抄作业进入关卡"],
             "timeout": 20000
         }
+
+    @staticmethod
+    def _get_rec_target_offset(node: dict) -> list[int]:
+        """从 OCR 节点读取合法的点击偏移量，非法或缺失时返回默认值。"""
+        if not isinstance(node, dict):
+            return [0, 0, 0, 0]
+
+        target_offset = node.get("target_offset")
+        if (
+            isinstance(target_offset, list)
+            and len(target_offset) == 4
+            and all(type(item) is int for item in target_offset)
+        ):
+            return target_offset.copy()
+        return [0, 0, 0, 0]
 
     def reverse(self, config_data: dict) -> dict:
         """
@@ -671,13 +689,22 @@ class ConfigGenerator:
                     config_info.cave_type = config_data.get("抄作业进入关卡-洞窟", {}).get("text_doc", "")
                 elif extract_type == "simple_event":
                     config_info.level_recognition_name = config_data.get("抄作业找到关卡-活动", {}).get("expected", "")
+                    config_info.rec_target_offset = self._get_rec_target_offset(
+                        config_data.get("抄作业找到关卡-活动", {})
+                    )
                 elif extract_type == "event":
                     config_info.level_recognition_name = config_data.get("抄作业找到关卡-活动分级", {}).get("expected", "")
+                    config_info.rec_target_offset = self._get_rec_target_offset(
+                        config_data.get("抄作业找到关卡-活动分级", {})
+                    )
                     config_info.difficulty = config_data.get("抄作业选择活动分级", {}).get("expected", "")
                 elif extract_type == "lantai":
                     config_info.level_recognition_name = config_data.get("抄作业找到关卡-兰台", {}).get("level", "")
                 elif extract_type == "ocr":
                     config_info.level_recognition_name = config_data.get("抄作业找到关卡-OCR", {}).get("expected", "")
+                    config_info.rec_target_offset = self._get_rec_target_offset(
+                        config_data.get("抄作业找到关卡-OCR", {})
+                    )
 
         # 解析回合动作
         temp_data = {}

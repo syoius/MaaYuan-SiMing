@@ -181,6 +181,7 @@ class ActionService:
         level_config = LevelConfig(
             level_type=request.level_type,
             level_recognition_name=request.level_recognition_name,
+            rec_target_offset=request.rec_target_offset,
             difficulty=request.difficulty,
             cave_type=request.cave_type,
             lantai_nav=request.lantai_nav,

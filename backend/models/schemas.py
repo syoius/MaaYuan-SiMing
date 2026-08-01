@@ -57,6 +57,12 @@ class ExportRequest(BaseModel):
     level_name: str = Field(default='generated_config', description="关卡名称")
     level_type: Literal['', '主线', '洞窟', '活动', '活动有分级', '白鹄', '兰台', '其他'] = Field(default='', description="关卡类型")
     level_recognition_name: str = Field(default='', description="关卡识别名称")
+    rec_target_offset: list[int] = Field(
+        default_factory=lambda: [0, 0, 0, 0],
+        min_length=4,
+        max_length=4,
+        description="OCR 点击偏移量 [x, y, w, h]",
+    )
     difficulty: str = Field(default='', description="难度等级")
     cave_type: Literal['', '左', '右'] = Field(default='', description="洞窟类型")
     lantai_nav: str = Field(default='true', description="兰台导航设置")
@@ -64,6 +70,14 @@ class ExportRequest(BaseModel):
     ult_delay: str = Field(default='', description="大招延迟(ms)")
     defense_delay: str = Field(default='', description="防御延迟(ms)")
     actions: dict = Field(default_factory=dict, description="回合动作数据")
+
+    @field_validator('rec_target_offset', mode='before')
+    @classmethod
+    def validate_rec_target_offset(cls, v):
+        """校验 OCR 点击偏移量为四元整数数组"""
+        if not isinstance(v, list) or len(v) != 4 or any(type(item) is not int for item in v):
+            raise ValueError('rec_target_offset 必须是由 4 个整数组成的数组')
+        return v
 
 
 class RestartRequest(BaseModel):
@@ -101,12 +115,26 @@ class ConfigInfo(BaseModel):
     """关卡配置信息"""
     level_type: str = Field(default='')
     level_recognition_name: str = Field(default='')
+    rec_target_offset: list[int] = Field(
+        default_factory=lambda: [0, 0, 0, 0],
+        min_length=4,
+        max_length=4,
+        description="OCR 点击偏移量 [x, y, w, h]",
+    )
     difficulty: str = Field(default='')
     cave_type: str = Field(default='')
     lantai_nav: str = Field(default='')
     attack_delay: str = Field(default='3000')
     ult_delay: str = Field(default='5000')
     defense_delay: str = Field(default='3000')
+
+    @field_validator('rec_target_offset', mode='before')
+    @classmethod
+    def validate_rec_target_offset(cls, v):
+        """校验 OCR 点击偏移量为四元整数数组"""
+        if not isinstance(v, list) or len(v) != 4 or any(type(item) is not int for item in v):
+            raise ValueError('rec_target_offset 必须是由 4 个整数组成的数组')
+        return v
 
 
 class ImportResponse(BaseModel):
@@ -128,12 +156,26 @@ class LevelConfig(BaseModel):
     """关卡配置领域模型"""
     level_type: str = ''
     level_recognition_name: str = ''
+    rec_target_offset: list[int] = Field(
+        default_factory=lambda: [0, 0, 0, 0],
+        min_length=4,
+        max_length=4,
+        description="OCR 点击偏移量 [x, y, w, h]",
+    )
     difficulty: str = ''
     cave_type: str = ''
     lantai_nav: str = 'true'
     attack_delay: int = 3000
     ult_delay: int = 5000
     defense_delay: int = 3000
+
+    @field_validator('rec_target_offset', mode='before')
+    @classmethod
+    def validate_rec_target_offset(cls, v):
+        """校验 OCR 点击偏移量为四元整数数组"""
+        if not isinstance(v, list) or len(v) != 4 or any(type(item) is not int for item in v):
+            raise ValueError('rec_target_offset 必须是由 4 个整数组成的数组')
+        return v
 
     @field_validator('attack_delay', 'ult_delay', 'defense_delay', mode='before')
     @classmethod
