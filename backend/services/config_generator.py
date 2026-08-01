@@ -533,8 +533,8 @@ class ConfigGenerator:
         """添加兰台导航节点"""
         level_name = level_config.level_recognition_name
         print(f"[DEBUG] _add_lantai_nodes - level_name: '{level_name}'")
-        simple_levels = {'诛仙阵', '戮魔阵', '奉诏讨伐'}
-        other_simple = {'千军阵', '三才阵', '北风演习'}
+        simple_levels = {'诛仙阵', '戮魔阵', '奉诏讨伐', '右'}
+        other_simple = {'千军阵', '三才阵', '北风演习', '左'}
 
         if level_name in simple_levels:
             print(f"[DEBUG] 进入简单关卡分支 (诛仙阵/戮魔阵/奉诏讨伐)")
