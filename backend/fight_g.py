@@ -582,15 +582,6 @@ def generate_config(input_path, output_path, level_type='', level_recognition_na
         # 路由去重，防止 next/interrupt/on_error 目标重复
         deduplicate_routes(result_config)
 
-        # 为检测节点回填 restore_next：不触发重开时恢复的正常流程
-        DETECTION_ACTIONS = ("DownRestart", "RetreatRestart", "BirdRestart", "DragonRestart")
-        for node in result_config.values():
-            if isinstance(node, dict) and node.get("custom_action") in DETECTION_ACTIONS:
-                param = node.get("custom_action_param", {})
-                if isinstance(param, dict):
-                    param["restore_next"] = list(node.get("next", []))
-                    node["custom_action_param"] = param
-
         # 保存输出配置
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(result_config, f, ensure_ascii=False, indent=4)
