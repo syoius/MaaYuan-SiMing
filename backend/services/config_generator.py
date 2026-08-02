@@ -430,19 +430,22 @@ class ConfigGenerator:
                 current_action_key = action_key
                 action_counter += 1
 
-            # 每个节点 next 添加史子眇sp
-            for node in result_config.values():
-                next_field = node.get("next")
-                if isinstance(next_field, list):
-                    node["next"] = ["史子眇sp"] + [n for n in next_field if n != "史子眇sp"]
-
-            # 最后一个动作指向胜利或下回合
+            # 最后一个动作指向下回合
             if current_action_key:
                 if int(round_num) < max_round_with_actions:
-                    self._append_to_next(result_config[current_action_key], "抄作业战斗胜利")
                     self._append_to_next(result_config[current_action_key], f"检测回合{int(round_num)+1}")
-                else:
-                    self._append_to_next(result_config[current_action_key], "抄作业战斗胜利")
+
+        # 每个行动结束后都优先检测战斗是否胜利。
+        # 只处理行动节点，避免将检测插入回合识别、重开或导航路由。
+        action_key_pattern = re.compile(r'^回合\d+行动\d+$')
+        for node_name, node in result_config.items():
+            if not action_key_pattern.fullmatch(node_name):
+                continue
+            next_field = node.get("next", [])
+            node["next"] = ["抄作业战斗胜利-check"] + [
+                route for route in next_field
+                if route != "抄作业战斗胜利-check"
+            ]
 
         # 添加导航和辅助节点
         self._add_navigation_nodes(result_config, config)
@@ -714,6 +717,7 @@ class ConfigGenerator:
                 round_num = key.replace("检测回合", "")
                 temp_data.setdefault(round_num, {'prefix': [], 'actions': []})
 
+                # 兼容旧配置：新配置不再生成该节点，导入时仍忽略它。
                 next_list = [n for n in value.get("next", []) if n != "史子眇sp"]
                 if not next_list:
                     continue
