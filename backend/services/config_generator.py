@@ -330,6 +330,7 @@ class ConfigGenerator:
                     "upper": [255, 255, 120],
                     "lower": [180, 160, 40],
                     "roi": [58, 160, 103, 88],
+                    "count": 50,
                     "next": [f"回合{round_num}行动1"],
                     "text_doc": f"第{round_num}回合橙星检测",
                     "focus": f"第{round_num}回合有橙星"
@@ -341,6 +342,7 @@ class ConfigGenerator:
                     "upper": [198, 115, 227],
                     "lower": [112, 54, 133],
                     "roi": [58, 160, 103, 88],
+                    "count": 50,
                     "next": [f"回合{round_num}行动1"],
                     "text_doc": f"第{round_num}回合紫星检测",
                     "focus": f"第{round_num}回合有紫星"
@@ -352,6 +354,7 @@ class ConfigGenerator:
                     "upper": [79, 142, 189],
                     "lower": [59, 122, 169],
                     "roi": [58, 160, 103, 88],
+                    "count": 50,
                     "next": [f"回合{round_num}行动1"],
                     "text_doc": f"第{round_num}回合蓝星检测",
                     "focus": f"第{round_num}回合有蓝星"
