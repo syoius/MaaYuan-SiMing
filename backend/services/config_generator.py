@@ -455,15 +455,26 @@ class ConfigGenerator:
 
         # 每个行动结束后都优先检测战斗是否胜利。
         # 只处理行动节点，避免将检测插入回合识别、重开或导航路由。
-        action_key_pattern = re.compile(r'^回合\d+行动\d+$')
+        action_key_pattern = re.compile(r'^回合(\d+)行动(\d+)$')
+        last_action = None
+        last_action_order = (-1, -1)
         for node_name, node in result_config.items():
-            if not action_key_pattern.fullmatch(node_name):
+            match = action_key_pattern.fullmatch(node_name)
+            if not match:
                 continue
+            action_order = (int(match.group(1)), int(match.group(2)))
+            if action_order > last_action_order:
+                last_action = node
+                last_action_order = action_order
             next_field = node.get("next", [])
             node["next"] = ["抄作业战斗胜利-check"] + [
                 route for route in next_field
                 if route != "抄作业战斗胜利-check"
             ]
+
+        # 最后一个实际动作可能是普通、额外或检测动作；统一给战斗收尾留出 30 秒。
+        if last_action is not None:
+            last_action["timeout"] = 30000
 
         # 添加导航和辅助节点
         self._add_navigation_nodes(result_config, config)
