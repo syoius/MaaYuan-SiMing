@@ -522,7 +522,7 @@ class ConfigGenerator:
         config["抄作业进入关卡-洞窟"] = {
             "text_doc": "左" if is_left else "右",
             "recognition": "OCR",
-            "expected": "前",
+            "expected": ["前","往"],
             "replace": ["煎", "前"],
             "roi": [237, 810, 82, 89] if is_left else [558, 804, 79, 89],
             "action": "Click",
