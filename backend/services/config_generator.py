@@ -309,11 +309,15 @@ class ConfigGenerator:
 
             # 回合检测节点
             result_config[f"检测回合{round_num}"] = {
-                "recognition": "Custom",
-                "custom_recognition": "PureNum",
-                "custom_recognition_param": {
-                    "roi": [641, 50, 43, 27],
-                    "expected": str(round_num)
+                "recognition": {
+                    "type": "Custom",
+                    "param": {
+                        "custom_recognition": "ColorOCR",
+                        "custom_recognition_param": {
+                            "target_color": [118, 175, 122],
+                            "recognition": f"战斗回合{round_num}识别"
+                        }
+                    }
                 },
                 "text_doc": f"回合{round_num}",
                 "focus": f"当前：第{round_num}回合",
@@ -321,6 +325,17 @@ class ConfigGenerator:
                 "on_error": ["抄作业点左上角重开"],
                 "timeout": 3000,
                 "post_delay": 4000,
+            }
+            result_config[f"战斗回合{round_num}识别"] = {
+                "recognition": {
+                    "type": "OCR",
+                    "param": {
+                        "model": "en",
+                        "only_rec": True,
+                        "roi": [641, 50, 43, 27],
+                        "expected": str(round_num)
+                    }
+                }
             }
 
             # 橙星检测节点
@@ -488,7 +503,7 @@ class ConfigGenerator:
 
         # 作业信息
         config["作业信息"] = {
-            "focus": "[color:#D48806] [如果版本符合请无视] 该作业由 MaaYuan Share v26.08.01 生成，推荐使用 MaaYuan v2.2.0-beta1 或更高版本运行，以免作业无法使用。如作业中包含以下功能则必须使用最新版本：1️⃣自定义点击偏移量（e.g. 泰山府关卡且使用了重开/自动赌功能）2️⃣退场检测重开 3️⃣未被复制重开（庞统鹦鹉） 4️⃣不足2龙气重开"
+            "focus": "[color:#D48806] [如果版本符合请无视] 该作业由 MaaYuan Share v26.08.14 生成，推荐使用 MaaYuan v2.2.0-beta3 或更高版本运行，以免作业无法使用。如作业中包含以下功能则必须使用最新版本：1️⃣自定义点击偏移量（e.g. 泰山府关卡且使用了重开/自动赌功能）2️⃣退场检测重开 3️⃣未被复制重开（庞统鹦鹉） 4️⃣不足2龙气重开[/color]"
         }
 
         config["抄作业胜利后继续"] = {
