@@ -474,7 +474,7 @@ class ConfigGenerator:
 
         # 最后一个实际动作可能是普通、额外或检测动作；统一给战斗收尾留出 30 秒。
         if last_action is not None:
-            last_action["timeout"] = 30000
+            last_action["timeout"] = 60000
 
         # 添加导航和辅助节点
         self._add_navigation_nodes(result_config, config)
